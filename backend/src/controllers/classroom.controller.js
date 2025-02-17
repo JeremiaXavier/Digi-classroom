@@ -1,0 +1,367 @@
+import Classroom from "../models/classrooms.model.js";
+import ClassroomMaterial from "../models/material.model.js";
+import cloudinary from "../lib/cloudinary.js";
+import Member from "../models/members.models.js";
+import Assignment from "../models/assignment.model.js";
+
+export const createClassrooms = async (req, res) => {
+  const { name, description } = req.body;
+
+  try {
+    // Check if the user is authorized (from the auth middleware)
+    if (!req.user || req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    // Create a new classroom instance
+    const newClassroom = new Classroom({
+      name,
+      description,
+      createdBy: req.user._id, // reference the creator from the authenticated user's id
+    });
+
+    // Save the classroom to the database
+    await newClassroom.save();
+
+    return res.status(201).json({
+      message: "Classroom created successfully",
+      classroom: newClassroom,
+    });
+  } catch (error) {
+    console.error("Error creating classroom:", error.message);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+export const getClassrooms = async (req, res) => {
+  const userId = req.user?._id; // Safely access userId from req.user
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized access" });
+  }
+
+  try {
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    // Fetch created classrooms
+    const createdClassrooms = await Classroom.find({
+      createdBy: userId,
+    }).lean();
+    const createdClassroomsWithRole = createdClassrooms.map((classroom) => ({
+      ...classroom,
+      role: "teacher",
+      createdBy: { name: "you" },
+    }));
+
+    // Fetch joined classrooms with populated data
+    const joinedClassrooms = await Member.find({ userId })
+      .populate("classroomId", "name description createdBy")
+      .populate({
+        path: "classroomId",
+        populate: {
+          path: "createdBy",
+          select: "fullName", // Select only the name from the 'createdBy' user
+        },
+      });
+
+    const joinedClassroomsWithRole = joinedClassrooms.map((member) => ({
+      ...member.classroomId,
+      role: member.role,
+      createdBy: member.classroomId.createdBy?.name || null, // Use optional chaining
+    }));
+
+    // Merge all classrooms into one array and remove duplicates by _id
+    const allClassrooms = [
+      ...joinedClassroomsWithRole,
+      ...createdClassroomsWithRole,
+    ];
+    const uniqueClassrooms = Array.from(
+      new Map(allClassrooms.map((item) => [item._id.toString(), item])).values()
+    );
+
+    res.status(200).json(uniqueClassrooms);
+  } catch (error) {
+    console.error("Error fetching classrooms with roles:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const StudentGetClassrooms = async (req, res) => {
+  try {
+    const userId = req.user?._id; // Safely access userId from req.user
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
+    // Fetch joined classrooms with populated data
+    const joinedClassrooms = await Member.find({ userId })
+      .populate({
+        path: "classroomId",
+        select: "name description createdBy",
+        populate: {
+          path: "createdBy",
+          select: "fullName",
+        },
+      })
+      .lean(); // Convert Mongoose documents to plain objects
+
+    // Map to include the role
+    const formattedClassrooms = joinedClassrooms.map((member) => {
+      if (!member.classroomId) return null; // Handle cases where classroomId is missing
+      return {
+        _id: member.classroomId._id,
+        name: member.classroomId.name,
+        description: member.classroomId.description,
+        createdBy: member.classroomId.createdBy?.fullName || "Unknown",
+        role: member.role,
+      };
+    }).filter(Boolean); // Remove any null values
+
+    res.status(200).json(formattedClassrooms);
+  } catch (error) {
+    console.error("Error fetching enrolled classrooms:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+/* not completed */
+export const getClassroomMaterials = async (req, res) => {
+  try {
+    const { id } = req.params; // Extract classroom ID from URL params
+    const classroomId = id;
+    // Fetch materials from the database for the given classroom
+    const materials = await ClassroomMaterial.find({ classroomId })
+      .populate("uploadedBy", "fullName email photoURL") // Populate user details (if needed)
+      .sort({ createdAt: -1 }); // Sort by latest first
+
+    // Check if materials exist
+    if (!materials.length) {
+      return res
+        .status(404)
+        .json({ message: "No materials found for this classroom." });
+    }
+
+    res.status(200).json({ materials });
+  } catch (error) {
+    console.error("Error fetching classroom materials:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch materials", error: error.message });
+  }
+};
+
+export const getClassroomAssignments = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const assignments = await Assignment.find({ classroomId: id })
+      .populate("createdBy", "fullName email photoURL") // Populate user details (if needed)
+      .sort({ createdAt: -1 });
+    if (!assignments.length) {
+      return res
+        .status(404)
+        .json({ message: "No assignments found for this classroom." });
+    }
+    res.status(200).json({ assignments });
+  } catch (error) {
+    console.error("Error fetching classroom Assignments:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch aSSIGNMENTS", error: error.message });
+  }
+};
+
+export const getClassroomMembers = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const members = await Member.find({ classroomId: id })
+      .populate("userId", "fullName email photoURL") // Populate user details (if needed)
+      .sort({ createdAt: -1 });
+    
+    const classroom = await Classroom.findById(id).populate(
+      "createdBy",
+      "fullName email photoURL"
+    );
+
+    if (!classroom) {
+      return res.status(404).json({ message: "Classroom not found." });
+    }
+
+    // Combine members & creator
+    const creator = classroom.createdBy;
+    const allMembers = creator
+      ? [
+          {
+            _id: creator._id,
+            fullName: creator.fullName,
+            email: creator.email,
+            photoURL: creator.photoURL,
+          },
+          ...members.map((m) => ({
+            _id: m.userId._id,
+            fullName: m.userId.fullName,
+            email: m.userId.email,
+            photoURL: m.userId.photoURL,
+          })),
+        ]
+      : members.map((m) => ({
+          _id: m.userId._id,
+          fullName: m.userId.fullName,
+          email: m.userId.email,
+          photoURL: m.userId.photoURL,
+        }));
+
+    res.status(200).json({ allMembers });
+  } catch (error) {
+    console.error("Error fetching classroom memebers:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch members", error: error.message });
+  }
+};
+
+export const uploadMaterials = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { title, description } = req.body;
+    const files = req.files;
+    if (!userId) return res.status(400).json({ message: "user id is empty" });
+    if (!files?.length || !title || !description) {
+      return res.status(400).json({
+        message: "All fields (title, description, files) are required.",
+      });
+    }
+
+    // Helper function to upload file
+    const uploadFile = (file) => {
+      return new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            { folder: "classroom_materials", resource_type: "auto" },
+            (error, result) => {
+              if (error) {
+                console.error("Cloudinary upload error:", error);
+                reject(error);
+              } else {
+                resolve(result.secure_url);
+              }
+            }
+          )
+          .end(file.buffer);
+      });
+    };
+
+    // Upload all files concurrently
+    const uploadedUrls = await Promise.all(files.map(uploadFile));
+
+    // Save uploaded materials to the database
+    const savedMaterials = await ClassroomMaterial.create({
+      title,
+      description,
+      fileUrls: uploadedUrls,
+      classroomId: req.params.classroomId,
+      uploadedBy: userId,
+    });
+
+    res.status(201).json({
+      message: "Materials uploaded successfully",
+      materials: savedMaterials,
+    });
+  } catch (error) {
+    console.error("Error in uploadMaterials controller:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to upload materials", error: error.message });
+  }
+};
+
+export const createAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id)
+      return res.status(400).json({ message: "please provide all the fields" });
+    const { title, description, dueDate, acceptResponses } = req.body;
+    if (!title || !description || !dueDate || !acceptResponses)
+      return res.status(400).json({ message: "please provide all the fields" });
+    if (!req.user._id)
+      return res.status(400).json({ messsage: "User is not authenticated" });
+    const newAssignement = new Assignment({
+      title,
+      description,
+      dueDate,
+      createdBy: req.user._id,
+      classroomId: id,
+      status: acceptResponses == true ? "accepting" : "closed",
+    });
+    await newAssignement.save();
+    return res.status(200).json({
+      message: "Assignment created successfully",
+      assignment: newAssignement,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal server error" });
+  }
+};
+
+
+export const deleteClassroom = async(req,res)=>{
+  const {id} = req.params;
+  try {
+    await Classroom.findByIdAndDelete({_id:id});
+    return res.status(200).json({message:" deleted classroom successfuly"});
+
+  } catch (error) {
+    return res.status(400).json({message:"cannot delete classroom",error});
+  } 
+}
+
+export const JoinClassroom = async (req, res) => {
+  try {
+    const userId = req.user?._id; // Get user ID from request (assuming authentication middleware)
+    const { code } = req.body; // Get joinCode from request body
+    const joinCode = code;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
+    if (!code) {
+      return res.status(400).json({ error: "Join code is required" });
+    }
+
+    // Find classroom by joinCode
+    const classroom = await Classroom.findOne({ joinCode });
+    if (!classroom) {
+      return res.status(404).json({ error: "Invalid classroom code" });
+    }
+
+    // Check if user is already a member
+    const existingMember = await Member.findOne({
+      userId,
+      classroomId: classroom._id,
+    });
+
+    if (existingMember) {
+      return res.status(400).json({ error: "You are already in this classroom" });
+    }
+
+    // Add user to classroom members
+    const newMember = new Member({
+      userId,
+      classroomId: classroom._id,
+      role: "student", // Default role
+    });
+
+    await newMember.save();
+
+    res.status(200).json({ message: "Successfully joined the classroom" });
+  } catch (error) {
+    console.error("Error joining classroom:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
