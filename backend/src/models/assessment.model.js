@@ -23,6 +23,10 @@ const questionSchema = new mongoose.Schema({
     type: [choiceSchema], // Only for MCQs
     default: undefined,
   },
+  isMultiple:{
+    type:Boolean,
+    default:false,
+  },
   answer: {
     type: String, // Used for paragraph-based answers
     required: function () {
@@ -34,6 +38,7 @@ const questionSchema = new mongoose.Schema({
 const assessmentSchema = new mongoose.Schema({
   title: { type: String, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  assignedClassrooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Classroom" }], // Added this
   questions: { type: [questionSchema], required: true },
   createdAt: { type: Date, default: Date.now },
 });

@@ -22,9 +22,13 @@ import TeacherClassroomDetails from "./pages/teacher-page/ClassroomDetails.jsx";
 import StudentClassrooms from "./pages/student-view/StudentClassrooms.jsx";
 import StudentClassroomDetails from "./pages/student-view/StudentClassroomDetails.jsx";
 import JoinClassroom from "./components/students/JoinClassroom.jsx";
-import Assessment from "./pages/assessment/Layer/AssessmentSecurityLayout.jsx";
 import LandingPage from "./pages/assessment/WelcomePage.jsx";
 import CreateAssessment from "./pages/assessment/CreateAssessment.jsx";
+import TeacherAssessmentsPage from "./pages/assessment/TeacherAssessments.jsx";
+import ExamSecurityLayout from "./pages/assessment/Layer/AssessmentSecurityLayout.jsx";
+import StudentExamSecurityLayout from "./pages/assessment/Student/AssessmentLayout.jsx";
+import StudentAssessments from "./pages/assessment/Student/ViewAssessments.jsx";
+import ExaminationPage from "./pages/assessment/Student/Examination/ExaminationLayout.jsx";
 
 function App() {
   const { authUser, isAuthenticated, set } = useAuthStore();
@@ -41,7 +45,7 @@ function App() {
             },
           });
 
-          set({ authUser: res.data, isAuthenticated: true,idToken:token });
+          set({ authUser: res.data, isAuthenticated: true, idToken: token });
           setIsLoading(false);
         } catch (error) {
           // Handle errors from the backend (e.g., network issues, etc.)
@@ -49,7 +53,6 @@ function App() {
         }
       } else {
         setIsLoading(false);
-        
       }
     });
 
@@ -70,13 +73,27 @@ function App() {
       <Toaster position="top-right" />
 
       <Routes>
-        <Route path="signin" element={isAuthenticated ? <Navigate to="/" /> : <AuthLogin />} />
-        <Route path="signup" element={isAuthenticated ? <Navigate to="/" /> : <AuthRegister />} />
+        <Route
+          path="signin"
+          element={isAuthenticated ? <Navigate to="/" /> : <AuthLogin />}
+        />
+        <Route
+          path="signup"
+          element={isAuthenticated ? <Navigate to="/" /> : <AuthRegister />}
+        />
         <Route path="/" element={<CheckAuth />}></Route>
-        <Route path="assessment" element={<Assessment/>}>
-          <Route path="" element={<LandingPage/>}/>
-          <Route path="create" element={<CreateAssessment/>}/>
+        <Route path="assessment" element={<ExamSecurityLayout />}>
+          <Route path="" element={<LandingPage />} />
+          <Route path="create" element={<CreateAssessment />} />
+          <Route path="view" element={<TeacherAssessmentsPage />} />
         </Route>
+        <Route path="assessment/s" element={<StudentExamSecurityLayout />}>
+          <Route path="" element={<LandingPage />} />
+          
+
+          <Route path="view" element={<StudentAssessments />} />
+        </Route>
+        <Route path="assessment/s/start/:id" element={<ExaminationPage />} />
         <Route
           path="student/dashboard"
           element={
@@ -85,7 +102,7 @@ function App() {
             </CheckRole>
           }
         >
-          <Route path="c/:id" element={<StudentClassroomDetails/>} />
+          <Route path="c/:id" element={<StudentClassroomDetails />} />
           <Route path="c" element={<StudentClassrooms />} />
           <Route path="r" element={<Classmates />} />
           <Route path="a" element={<Assignments />} />
@@ -99,7 +116,8 @@ function App() {
               <TeacherDashboard />
             </CheckRole>
           }
-        > <Route path="c/:id" element={<TeacherClassroomDetails />} />
+        >
+          <Route path="c/:id" element={<TeacherClassroomDetails />} />
           <Route path="c" element={<ManageClassrooms />} />
           <Route path="a" element={<Assignments />} />
           <Route path="g" element={<Grades />} />

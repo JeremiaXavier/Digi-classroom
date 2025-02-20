@@ -5,15 +5,15 @@ import toast from "react-hot-toast";
 import MalpracticeWarning from "@/components/assessment/Malpracticewarning";
 import { useAuthStore } from "@/store/auth-slice";
 import { auth } from "@/lib/firebase";
-const ExamSecurityLayout = () => {
+const StudentExamSecurityLayout = () => {
   const navigate = useNavigate();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
   const [isMalpracticeDetected, setIsMalpracticeDetected] = useState(false);
   const { authUser } = useAuthStore();
-   useEffect(() => {
-    if (authUser.role != "teacher") {
-      /* const handleFocusLoss = () => {
+  useEffect(() => {
+    /* if (authUser.role == "student") {
+      const handleFocusLoss = () => {
         handleMalpractice();
       };
 
@@ -48,9 +48,9 @@ const ExamSecurityLayout = () => {
         );
         document.removeEventListener("contextmenu", handleRightClick);
       };
-    }else{ */
-      navigate("/");
-    }
+    }else{
+        navigate("/");
+    } */
     
   }, [navigate]); 
 
@@ -73,15 +73,8 @@ const ExamSecurityLayout = () => {
     };
   }, []);
 
-  const enterFullscreen = () => {
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    }
-  };
-  const handleMalpractice = () => {
-    setIsMalpracticeDetected(true); // Show the warning modal
-  };
+
+  
 
   const handleCloseModal = () => {
     setIsMalpracticeDetected(false);
@@ -89,21 +82,7 @@ const ExamSecurityLayout = () => {
   };
   return (
     <div className="w-full h-screen flex bg-gray-100">
-      {!isFullscreen ? (
-        <div className="absolute inset-0 flex items-center justify-center text-center">
-          <div>
-            <p className="mb-4 text-lg font-bold">
-              Confirm! Enter to Assessment Portal
-            </p>
-            <button
-              onClick={enterFullscreen}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-lg"
-            >
-              Enter
-            </button>
-          </div>
-        </div>
-      ) : (
+      
         <>
           <MalpracticeWarning
             isOpen={isMalpracticeDetected}
@@ -131,15 +110,10 @@ const ExamSecurityLayout = () => {
 
             {/* Navigation Links */}
             <nav className="flex flex-col mt-4 gap-2 space-y-2 bg-gray-50 border border-gray-100">
-              <button
-                onClick={() => navigate("/assessment/create")}
-                className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
-              >
-                ✏️ Create Assessment
-              </button>
+              
               
               <button
-                onClick={() => navigate("/assessment/view")}
+                onClick={() => navigate("/assessment/s/view")}
                 className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
               >
                 ✏️ Your Assessments
@@ -148,14 +122,9 @@ const ExamSecurityLayout = () => {
                 onClick={() => navigate("/assessment/scoreboard")}
                 className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
               >
-                📊 View Scoreboard
+                📊 Your Performance
               </button>
-              <button
-                onClick={() => navigate("/assessment/manage-students")}
-                className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
-              >
-                🎓 Manage Students
-              </button>
+              
             </nav>
           </div>
 
@@ -177,9 +146,9 @@ const ExamSecurityLayout = () => {
             <Outlet />
           </div>
         </>
-      )}
+      
     </div>
   );
 };
 
-export default ExamSecurityLayout;
+export default StudentExamSecurityLayout;

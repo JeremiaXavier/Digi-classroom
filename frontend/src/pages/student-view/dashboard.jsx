@@ -1,5 +1,5 @@
 import { useAuthStore } from "@/store/auth-slice";
-import { Settings, LogOut, User, Home, Clipboard, Star, PlusCircle } from "lucide-react";
+import { Settings, LogOut, User, Home, Clipboard, Star, PlusCircle, HomeIcon, StarOff, Stamp } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -28,9 +28,9 @@ const StudentDashboard = () => {
   return (
     <div className="flex w-screen h-screen bg-gray-50">
       {/* Header */}
-      <aside className="w-64 bg-blue-600 text-white shadow-xl flex flex-col h-screen">
+      <aside className="w-64 bg-gray-50 text-blcck shadow-xl flex flex-col h-screen">
         {/* Logo */}
-        <div className="flex items-center justify-center h-20 border-b border-blue-500">
+        <div className="flex items-center justify-center h-20 border-b border-gray-500">
           <h1 className="text-2xl font-bold">Digi-Classroom</h1>
         </div>
 
@@ -41,7 +41,7 @@ const StudentDashboard = () => {
           <li>
               <Link
                 to="c"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-200 transition-all duration-300"
               >
                 <Home size={24} />
                 <span> Classrooms</span>
@@ -50,10 +50,19 @@ const StudentDashboard = () => {
             <li>
               <Link
                 to="join"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+                className="flex items-center space-x-3 p-3 rounded-lg  hover:bg-gray-200 transition-all duration-300"
               >
-                <Home size={24} />
+                <Stamp size={24} />
                 <span>Join</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="../assessment/s"
+                className="flex items-center space-x-3 p-3 rounded-lg  hover:bg-gray-200 transition-all duration-300"
+              >
+                <Clipboard size={24} />
+                <span>Assessments</span>
               </Link>
             </li>
             
@@ -62,10 +71,10 @@ const StudentDashboard = () => {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-blue-500">
+        <div className="p-4 border-t border-gray-500">
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+            className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-gray-200 transition-all duration-300"
           >
             <LogOut size={24} />
             <span>Logout</span>
