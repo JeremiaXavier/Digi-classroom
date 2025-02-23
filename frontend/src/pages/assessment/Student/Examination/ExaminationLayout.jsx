@@ -118,10 +118,12 @@ const ExaminationPage = () => {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <ExamWarningModal isOpen={!isExamStarted} onStartExam={handleStartExam} />
+
       <MalpracticeWarning
         isOpen={isMalpracticeDetected}
         onClose={handleCloseModal}
       />
+
       <header className="flex justify-between items-center p-4 bg-gray-900 text-white">
         <div className="flex items-center space-x-4">
           <img
@@ -145,7 +147,7 @@ const ExaminationPage = () => {
         {/* Left Column */}
         <div className="w-1/2 p-6 border-r">
           {question.type === "mcq" && question.paragraph && (
-            <div className="bg-gray-100 p-4 rounded">
+            <div className="bg-white p-4 rounded">
               <h2 className="font-bold text-lg">📖 Read the Paragraph</h2>
               <p>{question.paragraph}</p>
             </div>
@@ -164,7 +166,7 @@ const ExaminationPage = () => {
                 {question.choices.map((choice, index) => (
                   <label
                     key={index}
-                    className="block bg-gray-200 p-3 rounded cursor-pointer"
+                    className="block bg-white p-3 rounded cursor-pointer"
                   >
                     <input
                       type="radio"
@@ -191,7 +193,7 @@ const ExaminationPage = () => {
       </div>
 
       {/* Navigation Buttons */}
-      <footer className="flex justify-between p-4 bg-gray-50">
+      <footer className="flex justify-between p-4 bg-white">
         <button
           className="px-4 py-2 bg-gray-500 text-white rounded disabled:opacity-50"
           disabled={currentQuestion === 0}
