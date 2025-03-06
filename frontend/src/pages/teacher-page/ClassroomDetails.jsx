@@ -31,6 +31,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth-slice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const getFileIcon = (filename) => {
   const ext = filename.split(".").pop().toLowerCase();
@@ -85,6 +92,10 @@ const TeacherClassroomDetails = () => {
     dueDate: "",
     acceptResponses: false,
   });
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
+  const [newSubject, setNewSubject] = useState("");
   const { idToken } = useAuthStore();
   const handleCreateOption = (type) => {
     setCreateDialogType(type);
@@ -98,7 +109,7 @@ const TeacherClassroomDetails = () => {
     const fetchClassroomDetails = async () => {
       try {
         setLoading(true);
-  
+
         const results = await Promise.allSettled([
           axiosInstance.get(`/c/${id}`, {
             headers: { Authorization: `Bearer ${idToken}` },
@@ -109,32 +120,66 @@ const TeacherClassroomDetails = () => {
           axiosInstance.get(`/c/${id}/members`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }),
+          
         ]);
-  
+
         // Extract results safely
-        const materialRes = results[0].status === "fulfilled" ? results[0].value : null;
-        const assignmentsRes = results[1].status === "fulfilled" ? results[1].value : null;
-        const memberRes = results[2].status === "fulfilled" ? results[2].value : null;
-  
+        const materialRes =
+          results[0].status === "fulfilled" ? results[0].value : null;
+        const assignmentsRes =
+          results[1].status === "fulfilled" ? results[1].value : null;
+        const memberRes =
+          results[2].status === "fulfilled" ? results[2].value : null;
+        
         // Set state only if data is available
         if (assignmentsRes) setAssignments(assignmentsRes.data.assignments);
         if (memberRes) setMembers(memberRes.data.allMembers);
         if (materialRes) setMaterials(materialRes.data.materials);
-  
-        console.log("Fetched assignments:", assignmentsRes?.data?.assignments || "Failed");
-        console.log("Fetched members:", memberRes?.data?.allMembers || "Failed");
-        console.log("Fetched materials:", materialRes?.data?.materials || "Failed");
-  
+
+        console.log(
+          "Fetched assignments:",
+          assignmentsRes?.data?.assignments || "Failed"
+        );
+        console.log(
+          "Fetched members:",
+          memberRes?.data?.allMembers || "Failed"
+        );
+        console.log(
+          "Fetched materials:",
+          materialRes?.data?.materials || "Failed"
+        );
+        
       } catch (error) {
         console.error("Unexpected error fetching classroom details:", error);
       } finally {
         setLoading(false);
       }
     };
-  
+    
     fetchClassroomDetails();
-  }, [id, idToken]);
  
+  }, [id, idToken]);
+
+
+useEffect(()=>{
+  const fetchSubjects = async () => {
+    try {
+      const subjectsRes = await axiosInstance.get(`/c/${id}/get-subjects`, {
+        // Fetch subjects
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      setSubjects(subjectsRes?.data.subjects); // Set subjects state
+      console.log(
+        "Fetched subjects:",
+        subjectsRes?.data?.subjects || "Failed"
+      );
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+  fetchSubjects();
+},[id]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -216,6 +261,7 @@ const TeacherClassroomDetails = () => {
 
     formData.append("title", title);
     formData.append("description", description);
+    formData.append("subjectId", selectedSubject.trim()); // Trim any spaces
 
     try {
       const response = await axiosInstance.post(`/c/${id}/upload`, formData, {
@@ -236,6 +282,27 @@ const TeacherClassroomDetails = () => {
       );
       alert("Failed to upload materials");
     }
+  };
+  const handleAddSubject = async () => {
+    if (!newSubject.trim()) return;
+
+  try {
+    setLoading(true);
+    const res = await axiosInstance.post(
+      "/c/add-subjects",
+      { name: newSubject, classroomId:id }, // Include classroomId
+      { headers: { Authorization: `Bearer ${idToken}` } }
+    );
+
+    setSubjects((prevSubjects) => [...prevSubjects, res.data.subject]);
+    setSelectedSubject(res.data.subject._id);     // Auto-select new subject
+    setShowNewSubjectInput(false); // Hide input field
+    setNewSubject(""); // Reset input
+  } catch (error) {
+    console.error("Failed to add subject", error);
+  } finally {
+    setLoading(false);
+  }
   };
 
   return (
@@ -390,7 +457,6 @@ const TeacherClassroomDetails = () => {
                     Description
                   </label>
                   <Textarea
-                    type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Enter description"
@@ -398,13 +464,64 @@ const TeacherClassroomDetails = () => {
                   />
                 </div>
 
+                {/* Subject Dropdown with Add New Option */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Subject
+                  </label>
+                  <Select
+                    value={selectedSubject}
+                    onValueChange={(value) => {
+                      if (value === "add-new") {
+                        setShowNewSubjectInput(true);
+                      } else {
+                        setSelectedSubject(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="mt-1 w-full">
+                      <SelectValue placeholder="Select or search a subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="add-new" className="text-blue-500">
+                        ➕ Add New Subject
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Show input field if user chooses "Add New Subject" */}
+                {showNewSubjectInput && (
+                  <div className="mb-4 flex gap-2">
+                    <Input
+                      type="text"
+                      value={newSubject}
+                      onChange={(e) => setNewSubject(e.target.value)}
+                      placeholder="Enter new subject name"
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubject}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700">
                     Files
                   </label>
                   <Input
                     type="file"
-                    onChange={(e) => setFiles(e.target.files)} // Handle multiple files
+                    onChange={(e) => setFiles(e.target.files)}
                     multiple
                     className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm sm:text-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
@@ -413,7 +530,7 @@ const TeacherClassroomDetails = () => {
                 <button
                   type="button"
                   onClick={handleUploadMaterial}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 "
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
                   Upload
                 </button>
@@ -439,7 +556,6 @@ const TeacherClassroomDetails = () => {
           Members
         </div>
       </div>
-      
 
       <div className="p-6 m-6 bg-slate-100 overflow-scroll">
         {view === "materials" &&

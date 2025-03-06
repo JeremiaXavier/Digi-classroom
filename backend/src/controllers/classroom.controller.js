@@ -3,6 +3,8 @@ import ClassroomMaterial from "../models/material.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import Member from "../models/members.models.js";
 import Assignment from "../models/assignment.model.js";
+import Subject from "../models/subject.model.js";
+import mongoose from "mongoose";
 
 export const createClassrooms = async (req, res) => {
   const { name, description } = req.body;
@@ -109,16 +111,18 @@ export const StudentGetClassrooms = async (req, res) => {
       .lean(); // Convert Mongoose documents to plain objects
 
     // Map to include the role
-    const formattedClassrooms = joinedClassrooms.map((member) => {
-      if (!member.classroomId) return null; // Handle cases where classroomId is missing
-      return {
-        _id: member.classroomId._id,
-        name: member.classroomId.name,
-        description: member.classroomId.description,
-        createdBy: member.classroomId.createdBy?.fullName || "Unknown",
-        role: member.role,
-      };
-    }).filter(Boolean); // Remove any null values
+    const formattedClassrooms = joinedClassrooms
+      .map((member) => {
+        if (!member.classroomId) return null; // Handle cases where classroomId is missing
+        return {
+          _id: member.classroomId._id,
+          name: member.classroomId.name,
+          description: member.classroomId.description,
+          createdBy: member.classroomId.createdBy?.fullName || "Unknown",
+          role: member.role,
+        };
+      })
+      .filter(Boolean); // Remove any null values
 
     res.status(200).json(formattedClassrooms);
   } catch (error) {
@@ -127,14 +131,15 @@ export const StudentGetClassrooms = async (req, res) => {
   }
 };
 
-
 /* not completed */
 export const getClassroomMaterials = async (req, res) => {
   try {
     const { id } = req.params; // Extract classroom ID from URL params
-    const classroomId = id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid classroom ID from classroom Details get function" });
+    }
     // Fetch materials from the database for the given classroom
-    const materials = await ClassroomMaterial.find({ classroomId })
+    const materials = await ClassroomMaterial.find({ classroomId:id })
       .populate("uploadedBy", "fullName email photoURL") // Populate user details (if needed)
       .sort({ createdAt: -1 }); // Sort by latest first
 
@@ -147,10 +152,10 @@ export const getClassroomMaterials = async (req, res) => {
 
     res.status(200).json({ materials });
   } catch (error) {
-    console.error("Error fetching classroom materials:", error);
+    console.error("Error fetching classroom materials:", error.message);
     res
       .status(500)
-      .json({ message: "Failed to fetch materials", error: error.message });
+      .json({ message: "Failed to fetch materials in getClassroomMaterials", error: error.message });
   }
 };
 
@@ -180,7 +185,7 @@ export const getClassroomMembers = async (req, res) => {
     const members = await Member.find({ classroomId: id })
       .populate("userId", "fullName email photoURL") // Populate user details (if needed)
       .sort({ createdAt: -1 });
-    
+
     const classroom = await Classroom.findById(id).populate(
       "createdBy",
       "fullName email photoURL"
@@ -226,8 +231,11 @@ export const getClassroomMembers = async (req, res) => {
 export const uploadMaterials = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { title, description } = req.body;
+    const { title, description,subjectId } = req.body;
     const files = req.files;
+    if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).json({ error: "Invalid subjectId" });
+    }
     if (!userId) return res.status(400).json({ message: "user id is empty" });
     if (!files?.length || !title || !description) {
       return res.status(400).json({
@@ -236,7 +244,8 @@ export const uploadMaterials = async (req, res) => {
     }
 
     // Helper function to upload file
-    const uploadFile = (file) => {
+    
+      const uploadFile = (file) => {
       return new Promise((resolve, reject) => {
         cloudinary.uploader
           .upload_stream(
@@ -262,6 +271,7 @@ export const uploadMaterials = async (req, res) => {
       title,
       description,
       fileUrls: uploadedUrls,
+      subjectId:subjectId,
       classroomId: req.params.classroomId,
       uploadedBy: userId,
     });
@@ -309,17 +319,15 @@ export const createAssignment = async (req, res) => {
   }
 };
 
-
-export const deleteClassroom = async(req,res)=>{
-  const {id} = req.params;
+export const deleteClassroom = async (req, res) => {
+  const { id } = req.params;
   try {
-    await Classroom.findByIdAndDelete({_id:id});
-    return res.status(200).json({message:" deleted classroom successfuly"});
-
+    await Classroom.findByIdAndDelete({ _id: id });
+    return res.status(200).json({ message: " deleted classroom successfuly" });
   } catch (error) {
-    return res.status(400).json({message:"cannot delete classroom",error});
-  } 
-}
+    return res.status(400).json({ message: "cannot delete classroom", error });
+  }
+};
 
 export const JoinClassroom = async (req, res) => {
   try {
@@ -347,7 +355,9 @@ export const JoinClassroom = async (req, res) => {
     });
 
     if (existingMember) {
-      return res.status(400).json({ error: "You are already in this classroom" });
+      return res
+        .status(400)
+        .json({ error: "You are already in this classroom" });
     }
 
     // Add user to classroom members
@@ -363,5 +373,46 @@ export const JoinClassroom = async (req, res) => {
   } catch (error) {
     console.error("Error joining classroom:", error.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getSubjects = async (req, res) => {
+  try {
+    const { classroomId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(classroomId)) {
+      return res.status(400).json({ message: "Invalid classroom ID" });
+    }
+
+    const subjects = await Subject.find({ classroomId });
+
+    res.status(200).json({ subjects });
+  } catch (error) {
+    console.error("Error fetching subjects:", error.message);
+    res.status(500).json({ message: "Failed to fetch subjects" });
+  }
+};
+
+export const addSubject = async (req, res) => {
+  try {
+    const { name, classroomId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(classroomId)) {
+      return res.status(400).json({ message: "Invalid classroom ID" });
+    }
+
+    // Check if the subject already exists in this classroom
+    const existingSubject = await Subject.findOne({ name, classroomId });
+    if (existingSubject) {
+      return res.status(400).json({ message: "Subject already exists in this classroom" });
+    }
+
+    const newSubject = new Subject({ name, classroomId,createdBy:req.user._id });
+    await newSubject.save();
+
+    res.status(201).json({ message: "Subject added successfully", subject: newSubject });
+  } catch (error) {
+    console.error("Error adding subject:", error.message);
+    res.status(500).json({ message: "Failed to add subject" });
   }
 };

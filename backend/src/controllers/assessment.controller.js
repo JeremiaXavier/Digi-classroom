@@ -1,6 +1,7 @@
 import Assessment from "../models/assessment.model.js";
 import Member from "../models/members.models.js";
 import Classroom from "../models/classrooms.model.js";
+import Submission from "../models/submission.model.js";
 
 export const createAssessment = async(req,res)=>{
     try {
@@ -106,5 +107,66 @@ export const getQuestionsForExamination = async(req,res)=>{
   } catch (error) {
     console.error("Error fetching questions:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
+
+export const EvaluateAnswers = async(req,res)=>{
+  try {
+    const { testId, userId, answers } = req.body;
+
+    // 🔹 Check if the assessment exists
+    const assessment = await Assessment.findById(testId);
+    if (!assessment) {
+      return res.status(404).json({ message: "Assessment not found!" });
+    }
+
+    // 🔹 Prevent duplicate submissions
+    const existingSubmission = await Submission.findOne({ testId, userId });
+    if (existingSubmission) {
+      return res.status(400).json({ message: "Exam already submitted!" });
+    }
+
+    let totalMarks = 0; // Stores total score for MCQs
+
+    // 🔹 Process each question
+    const gradedAnswers = assessment.questions.map((question) => {
+      const userAnswer = answers.find((ans) => ans.questionId === String(question._id));
+
+      if (!userAnswer) return { questionId: question._id, marks: 0, userAnswer: null };
+
+      if (question.type === "mcq") {
+        const correctChoices = question.choices.filter((choice) => choice.isCorrect).map((c) => c.text);
+        const userChoices = Array.isArray(userAnswer.answer) ? userAnswer.answer : [userAnswer.answer];
+
+        // Check correctness
+        const isCorrect = question.isMultiple
+          ? correctChoices.sort().toString() === userChoices.sort().toString()
+          : correctChoices.includes(userChoices[0]);
+
+        const marks = isCorrect ? question.marks : 0;
+        totalMarks += marks;
+
+        return { questionId: question._id, marks, userAnswer: userChoices };
+      } else {
+        // Paragraph questions - No auto-grading
+        return { questionId: question._id, marks: 0, userAnswer: userAnswer.answer };
+      }
+    });
+
+    // 🔹 Save submission in DB
+    const submission = new Submission({
+      testId,
+      userId,
+      answers: gradedAnswers,
+      totalMarks,
+      status: "submitted", // Can be "submitted" or "review_pending"
+    });
+
+    await submission.save();
+
+    return res.status(200).json({ message: "Exam submitted successfully!", totalMarks });
+  } catch (error) {
+    console.error("Error submitting exam:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 }
