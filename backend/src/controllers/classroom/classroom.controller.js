@@ -1,10 +1,11 @@
-import Classroom from "../models/classrooms.model.js";
-import ClassroomMaterial from "../models/material.model.js";
-import cloudinary from "../lib/cloudinary.js";
-import Member from "../models/members.models.js";
-import Assignment from "../models/assignment.model.js";
-import Subject from "../models/subject.model.js";
+import Classroom from "../../models/classrooms.model.js";
+import ClassroomMaterial from "../../models/material.model.js";
+import cloudinary from "../../lib/cloudinary.js";
+import Member from "../../models/members.models.js";
+import Assignment from "../../models/assignment.model.js";
+import Subject from "../../models/subject.model.js";
 import mongoose from "mongoose";
+import { upload } from "../../middlewares/upload.middleware.js";
 
 export const createClassrooms = async (req, res) => {
   const { name, description } = req.body;
@@ -229,27 +230,36 @@ export const getClassroomMembers = async (req, res) => {
 };
 
 export const uploadMaterials = async (req, res) => {
-  try {
+  /* try {
     const userId = req.user._id;
-    const { title, description,subjectId } = req.body;
+    const { title, description, subjectId } = req.body;
     const files = req.files;
+
     if (!mongoose.Types.ObjectId.isValid(subjectId)) {
       return res.status(400).json({ error: "Invalid subjectId" });
     }
-    if (!userId) return res.status(400).json({ message: "user id is empty" });
+    if (!userId) return res.status(400).json({ message: "User ID is empty" });
     if (!files?.length || !title || !description) {
       return res.status(400).json({
         message: "All fields (title, description, files) are required.",
       });
     }
 
-    // Helper function to upload file
-    
-      const uploadFile = (file) => {
+    // Function to upload files to Cloudinary
+    const uploadFile = (file) => {
       return new Promise((resolve, reject) => {
+        const isImage = file.mimetype.startsWith("image"); // Check if the file is an image
+        const resourceType = isImage ? "image" : "raw"; // Use "raw" for documents
+
         cloudinary.uploader
           .upload_stream(
-            { folder: "classroom_materials", resource_type: "auto" },
+            {
+              folder: "classroom_materials",
+              resource_type: resourceType, // Use "raw" for xlsx, pdf, docx
+              use_filename: true,
+              unique_filename: false,
+              allowed_formats: ["pdf", "doc", "docx", "xlsx", "jpeg", "png"],
+            },
             (error, result) => {
               if (error) {
                 console.error("Cloudinary upload error:", error);
@@ -271,7 +281,7 @@ export const uploadMaterials = async (req, res) => {
       title,
       description,
       fileUrls: uploadedUrls,
-      subjectId:subjectId,
+      subjectId,
       classroomId: req.params.classroomId,
       uploadedBy: userId,
     });
@@ -285,10 +295,52 @@ export const uploadMaterials = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to upload materials", error: error.message });
-  }
+  } */
+
+      try {
+        upload(req, res, async (err) => {
+          if (err) {
+            return res.status(400).json({ message: err.message });
+          }
+    
+          const userId = req.user._id;
+          const { title, description, subjectId } = req.body;
+          const files = req.files;
+    
+          if (!files?.length || !title || !description) {
+            return res.status(400).json({
+              message: "All fields (title, description, files) are required.",
+            });
+          }
+    
+          const fileUrls = files.map((file) => `http://localhost:5001/uploads/${file.filename}`);
+    
+          // Save uploaded materials to the database
+          const savedMaterials = await ClassroomMaterial.create({
+            title,
+            description,
+            fileUrls,
+            subjectId,
+            classroomId: req.params.classroomId,
+            uploadedBy: userId,
+          });
+    
+          res.status(201).json({
+            message: "Materials uploaded successfully",
+            materials: savedMaterials,
+          });
+        });
+      } catch (error) {
+        console.error("Error in uploadMaterials controller:", error);
+        res.status(500).json({ message: "Failed to upload materials", error: error.message });
+      }
+
+
 };
 
-export const createAssignment = async (req, res) => {
+
+
+/* export const createAssignment = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id)
@@ -317,7 +369,7 @@ export const createAssignment = async (req, res) => {
       .status(500)
       .json({ message: error.message || "Internal server error" });
   }
-};
+}; */
 
 export const deleteClassroom = async (req, res) => {
   const { id } = req.params;

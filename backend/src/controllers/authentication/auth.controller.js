@@ -1,6 +1,6 @@
-import admin from "../firebase-config/firebaseAdmin.js";
-import User from "../models/user.model.js";
-import cloudinary from "../lib/cloudinary.js";
+import admin from "../../firebase-config/firebaseAdmin.js";
+import User from "../../models/user.model.js";
+import cloudinary from "../../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { uid, displayName, email, photoURL } = req.body;

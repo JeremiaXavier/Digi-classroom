@@ -1,19 +1,42 @@
 import mongoose from "mongoose";
 
-const submissionSchema = new mongoose.Schema({
-  testId: { type: mongoose.Schema.Types.ObjectId, ref: "Assessment", required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  answers: [
-    {
-      questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Assessment.questions" },
-      userAnswer: mongoose.Schema.Types.Mixed, // Stores text or selected choices
-      marks: { type: Number, default: 0 },
+const submissionSchema = new mongoose.Schema(
+  {
+    assignmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assignment",
+      required: true,
     },
-  ],
-  totalMarks: { type: Number, default: 0 },
-  status: { type: String, enum: ["submitted", "review_pending"], default: "submitted" },
-  submittedAt: { type: Date, default: Date.now },
-});
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    files: [
+      {
+        type: String, // Array of file URLs for submitted work
+      },
+    ],
+    grade: {
+      type: String,
+      default: null, // Optional grade
+    },
+    feedback: {
+      type: String,
+      default: null, // Teacher's feedback
+    },
+    gradedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null, // Teacher who graded the submission
+    },
+  },
+  { timestamps: true }
+);
 
 const Submission = mongoose.model("Submission", submissionSchema);
 export default Submission;

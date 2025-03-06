@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { axiosInstance } from "@/lib/axios";
-import { Download, Loader, PlusCircle, Users } from "lucide-react";
+import { Download, Eye, Loader, PlusCircle, Users } from "lucide-react";
 
 import {
   Dialog,
@@ -91,6 +91,7 @@ const TeacherClassroomDetails = () => {
     description: "",
     dueDate: "",
     acceptResponses: false,
+    classroomId: "",
   });
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -114,13 +115,12 @@ const TeacherClassroomDetails = () => {
           axiosInstance.get(`/c/${id}`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }),
-          axiosInstance.get(`/c/${id}/assignments`, {
+          axiosInstance.get(`/work/c/${id}`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }),
           axiosInstance.get(`/c/${id}/members`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }),
-          
         ]);
 
         // Extract results safely
@@ -130,7 +130,7 @@ const TeacherClassroomDetails = () => {
           results[1].status === "fulfilled" ? results[1].value : null;
         const memberRes =
           results[2].status === "fulfilled" ? results[2].value : null;
-        
+
         // Set state only if data is available
         if (assignmentsRes) setAssignments(assignmentsRes.data.assignments);
         if (memberRes) setMembers(memberRes.data.allMembers);
@@ -148,38 +148,34 @@ const TeacherClassroomDetails = () => {
           "Fetched materials:",
           materialRes?.data?.materials || "Failed"
         );
-        
       } catch (error) {
         console.error("Unexpected error fetching classroom details:", error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchClassroomDetails();
- 
   }, [id, idToken]);
 
-
-useEffect(()=>{
-  const fetchSubjects = async () => {
-    try {
-      const subjectsRes = await axiosInstance.get(`/c/${id}/get-subjects`, {
-        // Fetch subjects
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      setSubjects(subjectsRes?.data.subjects); // Set subjects state
-      console.log(
-        "Fetched subjects:",
-        subjectsRes?.data?.subjects || "Failed"
-      );
-    } catch (error) {
-      console.error(error.message);
-    }
-  };
-  fetchSubjects();
-},[id]);
-
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const subjectsRes = await axiosInstance.get(`/c/${id}/get-subjects`, {
+          // Fetch subjects
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setSubjects(subjectsRes?.data.subjects); // Set subjects state
+        console.log(
+          "Fetched subjects:",
+          subjectsRes?.data?.subjects || "Failed"
+        );
+      } catch (error) {
+        console.error(error.message);
+      }
+    };
+    fetchSubjects();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -220,34 +216,53 @@ useEffect(()=>{
 
   const handleAddAssignment = async () => {
     try {
-      await axiosInstance.post(`/c/${id}/add-assignment`, createAssignment, {
+      const formData = new FormData();
+      formData.append("title", createAssignment.title);
+      formData.append("description", createAssignment.description);
+      formData.append("dueDate", createAssignment.dueDate);
+      formData.append("acceptResponses", createAssignment.acceptResponses);
+      formData.append("classroomId", id);
+
+      // Append multiple files
+      if (createAssignment.files) {
+        Array.from(createAssignment.files).forEach((file) => {
+          formData.append("files", file);
+        });
+      }
+
+      await axiosInstance.post(`/work/create`, formData, {
         headers: {
           Authorization: `Bearer ${idToken}`,
+          "Content-Type": "multipart/form-data",
         },
       });
 
-      toast.success("succeefully created the assignment");
+      toast.success("Successfully created the assignment");
+
       setCreateAssignment({
         title: "",
         description: "",
         dueDate: "",
         acceptResponses: false,
+        files: null,
       });
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to create assignment"
       );
+
       setCreateAssignment({
         title: "",
         description: "",
         dueDate: "",
         acceptResponses: false,
+        files: null,
       });
     }
   };
 
   const handleUploadMaterial = async () => {
-    if (!title || !description || !files || files.length === 0) {
+    /* if (!title || !description || !files || files.length === 0) {
       alert("Please provide title, description, and select at least one file");
       return;
     }
@@ -281,28 +296,88 @@ useEffect(()=>{
         error.response?.data || error.message
       );
       alert("Failed to upload materials");
+    } */
+    if (!title.trim() || !description.trim() || !files.length) {
+      toast.error(
+        "Please provide title, description, and select at least one file"
+      );
+      return;
+    }
+
+    console.log("Uploading:", title, description);
+
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append("files", file);
+    });
+
+    formData.append("title", title.trim());
+    formData.append("description", description.trim());
+    formData.append("subjectId", selectedSubject.trim());
+
+    try {
+      setLoading(true);
+      const response = await axiosInstance.post(`/c/${id}/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        toast.success("Materials uploaded successfully!");
+        setTitle("");
+        setDescription("");
+        setFiles([]);
+      }
+    } catch (error) {
+      console.error(
+        "Error uploading materials:",
+        error.response?.data || error.message
+      );
+      toast.error("Failed to upload materials");
+    } finally {
+      setLoading(false);
     }
   };
   const handleAddSubject = async () => {
     if (!newSubject.trim()) return;
 
-  try {
-    setLoading(true);
-    const res = await axiosInstance.post(
-      "/c/add-subjects",
-      { name: newSubject, classroomId:id }, // Include classroomId
-      { headers: { Authorization: `Bearer ${idToken}` } }
-    );
+    try {
+      setLoading(true);
+      const res = await axiosInstance.post(
+        "/c/add-subjects",
+        { name: newSubject, classroomId: id }, // Include classroomId
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
 
-    setSubjects((prevSubjects) => [...prevSubjects, res.data.subject]);
-    setSelectedSubject(res.data.subject._id);     // Auto-select new subject
-    setShowNewSubjectInput(false); // Hide input field
-    setNewSubject(""); // Reset input
-  } catch (error) {
-    console.error("Failed to add subject", error);
-  } finally {
-    setLoading(false);
-  }
+      setSubjects((prevSubjects) => [...prevSubjects, res.data.subject]);
+      setSelectedSubject(res.data.subject._id); // Auto-select new subject
+      setShowNewSubjectInput(false); // Hide input field
+      setNewSubject(""); // Reset input
+    } catch (error) {
+      console.error("Failed to add subject", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewType, setPreviewType] = useState("");
+
+  const openPreview = (fileUrl, fileExtension) => {
+    if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(fileExtension)) {
+      setPreviewType("image");
+    } else if (["mp4", "webm", "ogg"].includes(fileExtension)) {
+      setPreviewType("video");
+    } else if (fileExtension === "pdf") {
+      setPreviewType("pdf");
+    } else if (["doc", "docx", "xls", "xlsx"].includes(fileExtension)) {
+      setPreviewType("document");
+    } else {
+      alert("Preview not available for this file type.");
+      return;
+    }
+    setPreviewUrl(fileUrl);
   };
 
   return (
@@ -370,7 +445,9 @@ useEffect(()=>{
                   Fill in the details below to create a new assignment.
                 </SheetDescription>
               </SheetHeader>
+
               <div className="space-y-4">
+                {/* Assignment Title */}
                 <Input
                   name="title"
                   placeholder="Assignment Title"
@@ -382,6 +459,8 @@ useEffect(()=>{
                     }))
                   }
                 />
+
+                {/* Description */}
                 <Textarea
                   name="description"
                   className="w-full p-2 border rounded"
@@ -395,10 +474,11 @@ useEffect(()=>{
                     }))
                   }
                 />
+
+                {/* Due Date */}
                 <Input
                   type="date"
                   name="dueDate"
-                  placeholder="Due Date"
                   value={createAssignment.dueDate}
                   onChange={(e) =>
                     setCreateAssignment((prev) => ({
@@ -407,12 +487,38 @@ useEffect(()=>{
                     }))
                   }
                 />
+
+                {/* File Upload */}
+                <div className="border p-2 rounded">
+                  <label className="block mb-1 text-sm font-medium">
+                    Attachments
+                  </label>
+                  <Input
+                    type="file"
+                    multiple
+                    onChange={(e) =>
+                      setCreateAssignment((prev) => ({
+                        ...prev,
+                        files: e.target.files,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Accept Responses Checkbox */}
                 <Checkbox
                   checked={createAssignment.acceptResponses}
-                  onCheckedChange={handleCheckboxChange}
+                  onCheckedChange={(checked) =>
+                    setCreateAssignment((prev) => ({
+                      ...prev,
+                      acceptResponses: checked,
+                    }))
+                  }
                   label="Accept Responses"
                 />
               </div>
+
+              {/* Submit Button */}
               <SheetFooter>
                 <SheetClose asChild>
                   <button
@@ -566,7 +672,7 @@ useEffect(()=>{
           ) : materials.length === 0 ? (
             <p className="text-gray-500">No materials uploaded yet.</p>
           ) : (
-            <div className="flex flex-1 w-full flex-col gap-3  ">
+            <div className="flex flex-1 w-full flex-col gap-3">
               {materials.map((material) => (
                 <Card
                   key={material._id}
@@ -578,31 +684,63 @@ useEffect(()=>{
                   <CardContent>
                     <p className="text-gray-600">{material.description}</p>
                     <div className="mt-2 space-y-3">
-                      {/* Check if fileUrls exists and is not empty */}
                       {material.fileUrls && material.fileUrls.length > 0 ? (
                         material.fileUrls.map((fileUrl, index) => {
-                          // Ensure fileUrl is not null or undefined
                           if (!fileUrl) return null;
 
-                          const filename = fileUrl.split("/").pop(); // Extract the file name from URL
+                          const filename = fileUrl.split("/").pop();
                           const fileExtension = filename
                             .split(".")
                             .pop()
-                            .toLowerCase(); // Get file extension for icon
+                            .toLowerCase();
+                          const isPreviewable = [
+                            "jpg",
+                            "jpeg",
+                            "png",
+                            "gif",
+                            "bmp",
+                            "webp",
+                            "mp4",
+                            "webm",
+                            "ogg",
+                            "pdf",
+                            "doc",
+                            "docx",
+                            "xls",
+                            "xlsx",
+                          ].includes(fileExtension);
 
                           return (
                             <div
                               key={index}
                               className="flex items-center gap-3 border p-3 rounded-lg hover:bg-gray-50 transition"
                             >
-                              {getFileIcon(fileExtension)} {/* File icon */}
+                              {getFileIcon(fileExtension)}
                               <span className="flex-1 truncate text-gray-700">
                                 {filename}
                               </span>
+
+                              {/* Preview Button */}
+                              {isPreviewable && (
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openPreview(fileUrl, fileExtension);
+                                  }}
+                                  variant="outline"
+                                  size="icon"
+                                  className="text-green-600 hover:bg-green-100"
+                                >
+                                  <Eye />
+                                </Button>
+                              )}
+
+                              {/* Download Button */}
                               <Button
-                                onClick={() =>
-                                  handleDownload(fileUrl, filename)
-                                } // Handle download
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(fileUrl, filename);
+                                }}
                                 variant="outline"
                                 size="icon"
                                 className="text-blue-600 hover:bg-blue-100"
@@ -615,9 +753,10 @@ useEffect(()=>{
                       ) : (
                         <p className="text-sm text-gray-500">
                           No files available
-                        </p> // Message when no files are present
+                        </p>
                       )}
                     </div>
+
                     <p className="text-sm text-gray-500 mt-3 flex flex-row items-center gap-3">
                       {material.uploadedBy?.photoURL ? (
                         <img
@@ -636,16 +775,15 @@ useEffect(()=>{
               ))}
             </div>
           ))}
-
         {view === "assignments" &&
           (loading ? (
-            <div className="flex items-center justify-center h-screen">
+            <div className="flex items-center justify-center h-screen ">
               <Loader className="size-10 animate-spin" />
             </div>
           ) : assignments.length === 0 ? (
             <p className="text-gray-500">No assignments uploaded yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-1 w-full flex-col gap-3">
               {assignments.map((assignment) => (
                 <Card
                   key={assignment._id}
@@ -670,11 +808,33 @@ useEffect(()=>{
                       )}
                       {assignment.createdBy?.fullName || "Unknown"}
                     </p>
+
+                    {/* Display Files */}
+                    {assignment.attachments?.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-semibold">Attachments:</h4>
+                        <ul className="list-disc list-inside text-blue-600">
+                          {assignment.attachments.map((file, index) => (
+                            <li key={index}>
+                              <a
+                                href={file} // Ensure this is the correct file URL
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline"
+                              >
+                                {file.split("/").pop()} {/* Show file name */}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           ))}
+
         {view === "members" &&
           (loading ? (
             <div className="flex items-center justify-center h-screen">
@@ -705,6 +865,23 @@ useEffect(()=>{
               ))}
             </div>
           ))}
+        {/* Preview Modal */}
+        {previewUrl && (
+          <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
+            <DialogContent>
+              <DialogTitle>Preview</DialogTitle>
+              {previewType === "image" && (
+                <img src={previewUrl} alt="Preview" className="w-full h-auto" />
+              )}
+              {previewType === "video" && (
+                <video src={previewUrl} controls className="w-full h-auto" />
+              )}
+              {previewType === "pdf" && (
+                <iframe src={previewUrl} className="w-full h-[500px]" />
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

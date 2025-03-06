@@ -1,7 +1,6 @@
 import express from "express"
-import { checkAuth, login, signup,updateProfile, updateRole } from "../controllers/auth.controller.js"
+import { checkAuth, login, signup,updateProfile, updateRole } from "../controllers/authentication/auth.controller.js"
 import { protectRoute } from "../middlewares/auth.middleware.js"
-import { createClassrooms } from "../controllers/classroom.controller.js"
 const authRouter = express.Router()
 
 /* mentioning the routes */

@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import classroomRoutes from "./routes/classroom.routes.js";
 import assessmentRouter from "./routes/assessment.routes.js";
+import assignmentRouter from "./routes/assignment/assignment.routes.js";
 
 const app = express();
 
@@ -26,11 +27,13 @@ app.use(express.json()); // To parse incoming JSON requests
 app.use(express.urlencoded({ extended: true }));
 // Middleware to handle cookies and JSON requests
 app.use(cookieParser()); 
+app.use("/uploads", express.static("uploads"));
 
 // Routes for authentication
 app.use("/api/auth", authRoutes);
 app.use("/api/c",classroomRoutes);
 app.use("/api/assess",assessmentRouter);
+app.use("/api/work",assignmentRouter);
 // Start the server and connect to the database
 app.listen(5001, () => {
   console.log("Server started at http://localhost:5001");

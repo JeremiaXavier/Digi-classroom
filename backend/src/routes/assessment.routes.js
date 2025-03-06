@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middlewares/auth.middleware.js";
-import { assignAssessment, createAssessment, EvaluateAnswers, getAssessments, getQuestionsForExamination, getStudentAssessments } from "../controllers/assessment.controller.js";
+import { assignAssessment, createAssessment, EvaluateAnswers, getAssessments, getQuestionsForExamination, getStudentAssessments } from "../controllers/assessment/assessment.controller.js";
 
 const assessmentRouter = express.Router();
 

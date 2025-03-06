@@ -1,7 +1,7 @@
-import Assessment from "../models/assessment.model.js";
-import Member from "../models/members.models.js";
-import Classroom from "../models/classrooms.model.js";
-import Submission from "../models/submission.model.js";
+import Assessment from "../../models/assessment.model.js";
+import Member from "../../models/members.models.js";
+import Classroom from "../../models/classrooms.model.js";
+import Submission from "../../models/submission.model.js";
 
 export const createAssessment = async(req,res)=>{
     try {
