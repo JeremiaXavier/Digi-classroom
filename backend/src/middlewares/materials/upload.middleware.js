@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Set the correct path to store uploads inside `backend/uploads`
-const uploadDir = path.join(__dirname, "../../uploads"); // Go up two levels to backend/
+const uploadDir = path.join(__dirname, "../../../uploads/materials"); // Go up two levels to backend/
 
 // Ensure the uploads directory exists
 if (!fs.existsSync(uploadDir)) {
@@ -21,7 +21,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir); // Save files in the "backend/uploads" folder
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname); // Unique filename
+    // Generate a unique filename and remove whitespaces
+    const cleanFilename = file.originalname.replace(/\s+/g, "_").toLocaleLowerCase(); // Replace spaces with underscores
+    cb(null, `${Date.now()}-${cleanFilename}`); // Unique filename
   },
 });
 

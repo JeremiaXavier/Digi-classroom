@@ -35,7 +35,7 @@ const TeacherDashboard = () => {
   return (
     <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-blue-600 text-white shadow-xl flex flex-col h-screen">
+      <aside className="w-64 bg-gray-50 text-gray-900 shadow-xl flex flex-col h-screen">
         {/* Logo */}
         <div className="flex items-center justify-center h-20 border-b border-blue-500">
           <h1 className="text-2xl font-bold">Digi-Classroom</h1>

@@ -5,7 +5,9 @@ import Member from "../../models/members.models.js";
 import Assignment from "../../models/assignment.model.js";
 import Subject from "../../models/subject.model.js";
 import mongoose from "mongoose";
-import { upload } from "../../middlewares/upload.middleware.js";
+import { upload } from "../../middlewares/materials/upload.middleware.js";
+import fs from "fs";
+import path from "path";
 
 export const createClassrooms = async (req, res) => {
   const { name, description } = req.body;
@@ -160,7 +162,7 @@ export const getClassroomMaterials = async (req, res) => {
   }
 };
 
-export const getClassroomAssignments = async (req, res) => {
+/* export const getClassroomAssignments = async (req, res) => {
   const { id } = req.params;
   try {
     const assignments = await Assignment.find({ classroomId: id })
@@ -178,7 +180,7 @@ export const getClassroomAssignments = async (req, res) => {
       .status(500)
       .json({ message: "Failed to fetch aSSIGNMENTS", error: error.message });
   }
-};
+}; */
 
 export const getClassroomMembers = async (req, res) => {
   const { id } = req.params;
@@ -313,7 +315,12 @@ export const uploadMaterials = async (req, res) => {
             });
           }
     
-          const fileUrls = files.map((file) => `http://localhost:5001/uploads/${file.filename}`);
+          const fileUrls = files.map((file) => {
+            // Clean the filename by removing spaces and converting to lowercase
+            const cleanFilename = file.filename.replace(/\s+/g, "_").toLowerCase();
+      
+            return `http://localhost:5001/uploads/materials/${cleanFilename}`;
+          });
     
           // Save uploaded materials to the database
           const savedMaterials = await ClassroomMaterial.create({
@@ -338,39 +345,40 @@ export const uploadMaterials = async (req, res) => {
 
 };
 
-
-
-/* export const createAssignment = async (req, res) => {
+export const deleteMaterials = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id)
-      return res.status(400).json({ message: "please provide all the fields" });
-    const { title, description, dueDate, acceptResponses } = req.body;
-    if (!title || !description || !dueDate || !acceptResponses)
-      return res.status(400).json({ message: "please provide all the fields" });
-    if (!req.user._id)
-      return res.status(400).json({ messsage: "User is not authenticated" });
-    const newAssignement = new Assignment({
-      title,
-      description,
-      dueDate,
-      createdBy: req.user._id,
-      classroomId: id,
-      status: acceptResponses == true ? "accepting" : "closed",
-    });
-    await newAssignement.save();
-    return res.status(200).json({
-      message: "Assignment created successfully",
-      assignment: newAssignement,
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: error.message || "Internal server error" });
-  }
-}; */
+    const { materialId } = req.params;
 
+    // Find the material
+    const material = await ClassroomMaterial.findById(materialId);
+    if (!material) {
+      return res.status(404).json({ message: "Material not found" });
+    }
+
+    // Delete associated files
+    if (material.fileUrls && material.fileUrls.length > 0) {
+      material.fileUrls.forEach((filePath) => {
+        const absolutePath = path.join(
+          process.cwd(),
+          "uploads/materials",
+          path.basename(filePath) // Extracts just the filename
+        );
+
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath); // Delete the file
+        }
+      });
+    }
+
+    // Delete the material from the database
+    await ClassroomMaterial.findByIdAndDelete(materialId);
+
+    res.status(200).json({ message: "Material and files deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting material:", error);
+    res.status(500).json({ message: "Internal Server Error",error:error.message });
+  }
+};
 export const deleteClassroom = async (req, res) => {
   const { id } = req.params;
   try {
