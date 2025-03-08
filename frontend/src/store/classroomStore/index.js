@@ -3,13 +3,19 @@ import { create } from "zustand";
 
 // Define the classroom store
 export const classroomStore = create((set, get) => ({
-  classrooms: [], // Array to hold classrooms
+  classrooms: [],
+  assignments:[], // Array to hold classrooms
   set: (data) => set({ ...data }),
   // Action to add a new classroom
   addClassroom: (newClassroom) => set((state) => ({
     classrooms: [...state.classrooms, newClassroom],
   })),
-
+  removeAssignment: (assignmentId) =>
+    set((state) => ({
+      assignments: state.assignments.filter(
+        (assignment) => assignment._id !== assignmentId
+      ),
+    })),
   // Action to update an existing classroom
   updateClassroom: (updatedClassroom) => set((state) => ({
     classrooms: state.classrooms.map((classroom) => 
@@ -26,7 +32,7 @@ export const classroomStore = create((set, get) => ({
   getClassroomById: (classroomId) => {
     return get().classrooms.find(classroom => classroom.id === classroomId);
   },
-  
+
   // Action to fetch classrooms from an API (replace '/api/classrooms' with your actual API endpoint)
   
 }));

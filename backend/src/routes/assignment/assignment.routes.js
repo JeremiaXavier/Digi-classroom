@@ -1,10 +1,11 @@
     import express from "express";
     import { protectRoute } from "../../middlewares/auth.middleware.js";
-import { closeAssignment, createAssignment, deleteAssignment, getAssignmentById, getAssignmentsByClassroom,  } from "../../controllers/assignment/assignment.controller.js";
+import { closeAssignment, createAssignment, deleteAssignment, getAssignmentById, getAssignmentsByClassroom, submitAssignment,  } from "../../controllers/assignment/assignment.controller.js";
     import {upload} from "../../middlewares/assignment/upload.middleware.js"
     const assignmentRouter = express.Router();
     
     assignmentRouter.post("/create",protectRoute,createAssignment);
+    assignmentRouter.post("/:assignmentId/submit",protectRoute,submitAssignment);
     assignmentRouter.get("/c/:classroomId",protectRoute,getAssignmentsByClassroom);
     assignmentRouter.get("/:id",protectRoute,getAssignmentById);
     assignmentRouter.post("/:id/close",protectRoute,closeAssignment);

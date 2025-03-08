@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { classroomStore } from "@/store/classroomStore";
+import { useStore } from "zustand";
 
 const getFileIcon = (filename) => {
   const ext = filename.split(".").pop().toLowerCase();
@@ -88,14 +89,16 @@ const getFileIcon = (filename) => {
 const TeacherClassroomDetails = () => {
   const { id } = useParams();
   const classrooms = classroomStore((state) => state.classrooms); // Get all classrooms from the store
-
+/*   const {  set,assignments } = useStore(classroomStore);
+ */const { assignments,set, removeAssignment } = useStore(classroomStore); // Zustand store
+  const [localAssignments, setLocalAssignments] = useState([]);
   // Find the selected classroom
   const classroom = classrooms.find((c) => c._id === id);
 
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [assignments, setAssignments] = useState([]);
-  const [members, setMembers] = useState([]);
+/*   const [assignments, setAssignments] = useState([]);
+ */  const [members, setMembers] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [newTeacher, setNewTeacher] = useState("");
   const [title, setTitle] = useState("");
@@ -115,9 +118,9 @@ const TeacherClassroomDetails = () => {
   const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
   const [newSubject, setNewSubject] = useState("");
   const { idToken } = useAuthStore();
-  const handleCreateOption = (type) => {
+/*   const handleCreateOption = (type) => {
     setCreateDialogType(type);
-  };
+  }; */
 
   const closeCreateDialog = () => {
     setCreateDialogType(null);
@@ -147,7 +150,7 @@ const TeacherClassroomDetails = () => {
         results[2].status === "fulfilled" ? results[2].value : null;
 
       // Set state only if data is available
-      if (assignmentsRes) setAssignments(assignmentsRes.data.assignments);
+      if (assignmentsRes) set({assignments:assignmentsRes.data.assignments});
       if (memberRes) setMembers(memberRes.data.allMembers);
       if (materialRes) setMaterials(materialRes.data.materials);
 
@@ -189,6 +192,9 @@ const TeacherClassroomDetails = () => {
     };
     fetchSubjects();
   }, [id]);
+  useEffect(() => {
+    setLocalAssignments(assignments);
+  }, [assignments]); // Runs when assignments change
 
   /*   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -399,7 +405,7 @@ const TeacherClassroomDetails = () => {
     if (!window.confirm("Are you sure you want to delete this assignment?")) {
       return;
     }
-
+  
     try {
       const response = await axiosInstance.delete(
         `/work/${assignmentId}/delete`,
@@ -409,20 +415,21 @@ const TeacherClassroomDetails = () => {
           },
         }
       );
-
+  
       if (response.status === 200) {
-        // Update state to remove deleted assignment
-        setAssignments((prevAssignments) =>
-          prevAssignments.filter(
-            (assignment) => assignment._id !== assignmentId
-          )
+        setLocalAssignments((prev) =>
+          prev.filter((assignment) => assignment._id !== assignmentId)
         );
+
+        // Update Zustand store to persist changes globally
+        removeAssignment(assignmentId);
       }
     } catch (error) {
       console.error("Error deleting assignment:", error);
       alert("Error deleting assignment. Please try again.");
     }
   };
+  
   const handleDeleteMaterial = async (materialId) => {
     if (!window.confirm("Are you sure you want to delete this material?")) {
       return;
@@ -462,17 +469,7 @@ const TeacherClassroomDetails = () => {
       <div className="flex gap-4">
         
 
-        {/* add assignment */}
 
-        {/* <button
-          className="px-4 py-2 fixed right-2 top-2/4  bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-          onClick={() => {
-            setCreateDialogType("material");
-          }}
-        >
-          <PlusCircle className="w-5 h-5" />
-          <span>Upload</span>
-        </button> */}
         {createDialogType === "Assignment" && (
           <Sheet open={true} onOpenChange={closeCreateDialog}>
             <SheetContent side="right" className="w-[400px] sm:w-[540px]">
@@ -723,6 +720,17 @@ const TeacherClassroomDetails = () => {
             </div>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
+              <div className="flex justify-end">
+                <button
+                  className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                  onClick={() => {
+                    setCreateDialogType("material");
+                  }}
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  <span>Create New</span>
+                </button>
+              </div>
               {materials.map((material) => (
                 <Card
                   key={material._id}
@@ -863,7 +871,7 @@ const TeacherClassroomDetails = () => {
                 </button>
               </div>
 
-              {assignments.map((assignment) => (
+              {localAssignments.map((assignment) => (
                 <Card
                   key={assignment._id}
                   className="shadow-md border rounded-lg"
@@ -1019,7 +1027,7 @@ const TeacherClassroomDetails = () => {
                   <DialogContent>
                     <DialogTitle>Add Teacher</DialogTitle>
                     <DialogDescription>
-                      Enter the teacher's email to add them to the classroom.
+                      Enter the teachers email to add them to the classroom.
                     </DialogDescription>
                     <div className="space-y-4">
                       <Input

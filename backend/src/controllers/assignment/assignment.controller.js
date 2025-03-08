@@ -1,4 +1,5 @@
 import { upload } from "../../middlewares/assignment/upload.middleware.js";
+import { submissionUpload } from "../../middlewares/submission/upload.middleware.js";
 import Assignment from "../../models/assignment.model.js";
 import Submission from "../../models/submission.model.js";
 import fs from "fs";
@@ -143,7 +144,9 @@ export const closeAssignment = async (req, res) => {
 
 // ✅ Submit an assignment
 export const submitAssignment = async (req, res) => {
+ 
   try {
+    submissionUpload(req, res, async (err) => {
     const assignment = await Assignment.findById(req.params.id);
 
     if (!assignment)
@@ -159,7 +162,7 @@ export const submitAssignment = async (req, res) => {
     }
 
     const files = req.files.map(
-      (file) => `/uploads/submissions/${file.filename}`
+      (file) => `http://localhost:5001/uploads/submissions/${file.filename}`
     );
 
     const newSubmission = new Submission({
@@ -170,6 +173,7 @@ export const submitAssignment = async (req, res) => {
 
     await newSubmission.save();
     res.status(201).json({ success: true, submission: newSubmission });
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -21,6 +21,10 @@ const submissionSchema = new mongoose.Schema(
         type: String, // Array of file URLs for submitted work
       },
     ],
+    comments:{
+      type:String,
+      default:null,
+    },
     grade: {
       type: String,
       default: null, // Optional grade
