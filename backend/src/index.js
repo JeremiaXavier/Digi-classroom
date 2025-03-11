@@ -15,7 +15,7 @@ dotenv.config();
 
 // CORS Middleware Setup - Place this at the top to handle all routes
 app.use(cors({
-  origin: "http://localhost:5173",  // Allow frontend URL
+  origin: ["http://localhost:5173",process.env.CLIENT_URL],  // Allow frontend URL
   credentials: true,  // Allow cookies and authorization headers
   methods: ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'], // Allow necessary HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allow headers
@@ -35,7 +35,7 @@ app.use("/api/c",classroomRoutes);
 app.use("/api/assess",assessmentRouter);
 app.use("/api/work",assignmentRouter);
 // Start the server and connect to the database
-app.listen(5001, () => {
-  console.log("Server started at http://localhost:5001");
+app.listen(process.env.PORT,process.env.HOST, () => {
+  console.log("Server started at http://192.168.200.199:5001");
   connectDb(); // Connect to your database
 });

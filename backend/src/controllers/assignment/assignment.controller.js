@@ -144,35 +144,34 @@ export const closeAssignment = async (req, res) => {
 
 // ✅ Submit an assignment
 export const submitAssignment = async (req, res) => {
- 
   try {
     submissionUpload(req, res, async (err) => {
-    const assignment = await Assignment.findById(req.params.id);
+      const assignment = await Assignment.findById(req.params.assignmentId);
 
-    if (!assignment)
-      return res
-        .status(404)
-        .json({ success: false, message: "Assignment not found" });
+      if (!assignment)
+        return res
+          .status(404)
+          .json({ success: false, message: "Assignment not found" });
 
-    if (assignment.status === "closed") {
-      return res.status(403).json({
-        success: false,
-        message: "Submissions are closed for this assignment",
+      if (assignment.status === "closed") {
+        return res.status(403).json({
+          success: false,
+          message: "Submissions are closed for this assignment",
+        });
+      }
+
+      const files = req.files.map(
+        (file) => `http://localhost:5001/uploads/submissions/${file.filename}`
+      );
+
+      const newSubmission = new Submission({
+        assignmentId: req.params.assignmentId,
+        studentId: req.user._id,
+        files,
       });
-    }
 
-    const files = req.files.map(
-      (file) => `http://localhost:5001/uploads/submissions/${file.filename}`
-    );
-
-    const newSubmission = new Submission({
-      assignmentId: req.params.id,
-      studentId: req.user.id,
-      files,
-    });
-
-    await newSubmission.save();
-    res.status(201).json({ success: true, submission: newSubmission });
+      await newSubmission.save();
+      res.status(201).json({ success: true, submission: newSubmission });
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -183,8 +182,8 @@ export const submitAssignment = async (req, res) => {
 export const getMySubmission = async (req, res) => {
   try {
     const submission = await Submission.findOne({
-      assignmentId: req.params.id,
-      studentId: req.user.id,
+      assignmentId: req.params.assignmentId,
+      studentId: req.user._id,
     });
 
     if (!submission)
@@ -201,14 +200,37 @@ export const getMySubmission = async (req, res) => {
 // ✅ Get all submissions for an assignment
 export const getAllSubmissionsForAssignment = async (req, res) => {
   try {
+    // Fetch the assignment details
+    const assignment = await Assignment.findById(req.params.assignmentId);
+
+    // Check if assignment exists
+    if (!assignment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Assignment not found" });
+    }
+
+    // Check if the logged-in teacher is the creator of the assignment
+    if (assignment.createdBy == req.user._id) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Access denied. You are not the creator of this assignment.",
+        });
+    }
+
+    // Fetch submissions only if the teacher is authorized
     const submissions = await Submission.find({
-      assignmentId: req.params.id,
-    }).populate("studentId", "fullName email");
+      assignmentId: req.params.assignmentId,
+    }).populate("studentId", "fullName email photoURL");
+
     res.json(submissions);
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
 
 // ✅ Grade a submission
 export const gradeSubmission = async (req, res) => {

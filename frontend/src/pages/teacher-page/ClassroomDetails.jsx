@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { axiosInstance } from "@/lib/axios";
 import {
   Copy,
@@ -8,9 +8,9 @@ import {
   Loader,
   LucideTrash2,
   Mail,
+  MoreVertical,
   PlusCircle,
   Share2,
-  Trash,
   Users,
 } from "lucide-react";
 
@@ -51,6 +51,12 @@ import {
 } from "@/components/ui/select";
 import { classroomStore } from "@/store/classroomStore";
 import { useStore } from "zustand";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const getFileIcon = (filename) => {
   const ext = filename.split(".").pop().toLowerCase();
@@ -87,18 +93,34 @@ const getFileIcon = (filename) => {
 };
 
 const TeacherClassroomDetails = () => {
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      try {
+        const response = await axiosInstance.get("/c/all", {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        const data = await response.data;
+        set({ classrooms: data });
+      } catch (error) {
+        console.error("Error fetching classrooms:", error);
+      }
+    };
+
+    fetchClassrooms();
+  }, []);
+  
   const { id } = useParams();
   const classrooms = classroomStore((state) => state.classrooms); // Get all classrooms from the store
-/*   const {  set,assignments } = useStore(classroomStore);
- */const { assignments,set, removeAssignment } = useStore(classroomStore); // Zustand store
+  /*   const {  set,assignments } = useStore(classroomStore);
+   */ const { assignments, set, removeAssignment } = useStore(classroomStore); // Zustand store
   const [localAssignments, setLocalAssignments] = useState([]);
   // Find the selected classroom
   const classroom = classrooms.find((c) => c._id === id);
 
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
-/*   const [assignments, setAssignments] = useState([]);
- */  const [members, setMembers] = useState([]);
+  /*   const [assignments, setAssignments] = useState([]);
+   */ const [members, setMembers] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [newTeacher, setNewTeacher] = useState("");
   const [title, setTitle] = useState("");
@@ -106,6 +128,7 @@ const TeacherClassroomDetails = () => {
   const [files, setFiles] = useState(null);
   const [createDialogType, setCreateDialogType] = useState(null);
   const [view, setView] = useState("materials");
+  const navigate = useNavigate();
   const [createAssignment, setCreateAssignment] = useState({
     title: "",
     description: "",
@@ -118,7 +141,7 @@ const TeacherClassroomDetails = () => {
   const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
   const [newSubject, setNewSubject] = useState("");
   const { idToken } = useAuthStore();
-/*   const handleCreateOption = (type) => {
+  /*   const handleCreateOption = (type) => {
     setCreateDialogType(type);
   }; */
 
@@ -150,7 +173,7 @@ const TeacherClassroomDetails = () => {
         results[2].status === "fulfilled" ? results[2].value : null;
 
       // Set state only if data is available
-      if (assignmentsRes) set({assignments:assignmentsRes.data.assignments});
+      if (assignmentsRes) set({ assignments: assignmentsRes.data.assignments });
       if (memberRes) setMembers(memberRes.data.allMembers);
       if (materialRes) setMaterials(materialRes.data.materials);
 
@@ -193,7 +216,8 @@ const TeacherClassroomDetails = () => {
     fetchSubjects();
   }, [id]);
   useEffect(() => {
-    setLocalAssignments(assignments);
+    const filteredAssignments = assignments.filter((a) => a.classroomId === id);
+    setLocalAssignments(filteredAssignments);
   }, [assignments]); // Runs when assignments change
 
   /*   const handleChange = (e) => {
@@ -218,7 +242,7 @@ const TeacherClassroomDetails = () => {
       const response = await axiosInstance.post(
         `/c/${id}/add-teacher`,
         {
-          name: newTeacher,
+          email: newTeacher,
         },
         {
           headers: {
@@ -226,13 +250,38 @@ const TeacherClassroomDetails = () => {
           },
         }
       );
+      toast.success("Teacher added successfully");
       setTeachers([...teachers, response.data]);
       setNewTeacher("");
     } catch (error) {
-      console.error("Error adding teacher:", error);
+      console.error("Error adding teacher:");
+      toast.error(error.message);
     }
   };
 
+  const handleRemoveMember = async (memberId) => {
+    try {
+      const response = await axiosInstance.delete(
+        `/c/${id}/remove-member`,
+        {
+          data: { memberId }, // Correct way to pass body in DELETE request
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      toast.success("Member removed successfully");
+
+      // Update the UI by filtering out the removed member
+      setMembers((prevMembers) =>
+        prevMembers.filter((m) => m._id !== memberId)
+      );
+    } catch (error) {
+      console.error("Error removing member:", error);
+      toast.error(error.response?.data?.error || "Error removing member");
+    }
+  };
   const handleAddAssignment = async () => {
     try {
       const formData = new FormData();
@@ -405,7 +454,7 @@ const TeacherClassroomDetails = () => {
     if (!window.confirm("Are you sure you want to delete this assignment?")) {
       return;
     }
-  
+
     try {
       const response = await axiosInstance.delete(
         `/work/${assignmentId}/delete`,
@@ -415,7 +464,7 @@ const TeacherClassroomDetails = () => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         setLocalAssignments((prev) =>
           prev.filter((assignment) => assignment._id !== assignmentId)
@@ -429,7 +478,7 @@ const TeacherClassroomDetails = () => {
       alert("Error deleting assignment. Please try again.");
     }
   };
-  
+
   const handleDeleteMaterial = async (materialId) => {
     if (!window.confirm("Are you sure you want to delete this material?")) {
       return;
@@ -467,9 +516,6 @@ const TeacherClassroomDetails = () => {
   return (
     <div className="p-1 bg-white h-[95%] space-y-6 overflow-scroll">
       <div className="flex gap-4">
-        
-
-
         {createDialogType === "Assignment" && (
           <Sheet open={true} onOpenChange={closeCreateDialog}>
             <SheetContent side="right" className="w-[400px] sm:w-[540px]">
@@ -842,7 +888,7 @@ const TeacherClassroomDetails = () => {
             <div className="flex items-center justify-center h-screen ">
               <Loader className="size-10 animate-spin" />
             </div>
-          ) : assignments.length === 0 ? (
+          ) : localAssignments.length === 0 ? (
             <div className="flex flex-1 w-full flex-col gap-3">
               <div className="flex justify-end">
                 <button
@@ -875,6 +921,9 @@ const TeacherClassroomDetails = () => {
                 <Card
                   key={assignment._id}
                   className="shadow-md border rounded-lg"
+                  onClick={() =>
+                    navigate(`/teacher/dashboard/a/${assignment._id}`)
+                  }
                 >
                   <CardHeader className="flex flex-row gap-3 justify-between  items-center">
                     <CardTitle>{assignment.title}</CardTitle>
@@ -1053,22 +1102,49 @@ const TeacherClassroomDetails = () => {
               </div>
 
               {members.map((member) => (
-                <Card key={member._id} className="shadow-md border rounded-lg">
-                  <CardContent>
-                    <p className="text-lg text-gray-500 mt-3 flex flex-row  items-center gap-3">
-                      {member.photoURL ? (
-                        <img
-                          src={member.photoURL}
-                          alt="User Avatar"
-                          className="w-12 rounded-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div></div>
-                      )}
+                <Card
+                  key={member._id}
+                  className="shadow-md border rounded-lg flex justify-between items-center p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    {member.photoURL ? (
+                      <img
+                        src={member.photoURL}
+                        alt="User Avatar"
+                        className="w-12 h-12 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                    )}
+                    <p className="text-lg text-gray-500">
                       {member.fullName || "Unknown"}
                     </p>
-                  </CardContent>
+                  </div>
+
+                  {/* Three-dot Dropdown Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                        <MoreVertical size={20} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleRemoveMember(member._id)}
+                      >
+                        Remove
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleSuspend(member._id)}
+                      >
+                        Suspend
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleMore(member._id)}>
+                        More
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </Card>
               ))}
             </div>

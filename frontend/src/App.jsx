@@ -30,6 +30,7 @@ import StudentExamSecurityLayout from "./pages/assessment/Student/AssessmentLayo
 import StudentAssessments from "./pages/assessment/Student/ViewAssessments.jsx";
 import ExaminationPage from "./pages/assessment/Student/Examination/ExaminationLayout.jsx";
 import AssignmentDetails from "./pages/student-view/StudentAssignments.jsx";
+import AssignmentDetailsTeacher from "./pages/teacher-page/AssignmentDetails.jsx";
 
 function App() {
   const { authUser, isAuthenticated, set } = useAuthStore();
@@ -120,6 +121,7 @@ function App() {
           }
         >
           <Route path="c/:id" element={<TeacherClassroomDetails />} />
+          <Route path="a/:assignmentId" element={<AssignmentDetailsTeacher />} />
           <Route path="c" element={<ManageClassrooms />} />
           <Route path="a" element={<Assignments />} />
           <Route path="g" element={<Grades />} />

@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import { upload } from "../../middlewares/materials/upload.middleware.js";
 import fs from "fs";
 import path from "path";
+import User from "../../models/user.model.js";
 
 export const createClassrooms = async (req, res) => {
   const { name, description } = req.body;
@@ -139,10 +140,14 @@ export const getClassroomMaterials = async (req, res) => {
   try {
     const { id } = req.params; // Extract classroom ID from URL params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid classroom ID from classroom Details get function" });
+      return res
+        .status(400)
+        .json({
+          message: "Invalid classroom ID from classroom Details get function",
+        });
     }
     // Fetch materials from the database for the given classroom
-    const materials = await ClassroomMaterial.find({ classroomId:id })
+    const materials = await ClassroomMaterial.find({ classroomId: id })
       .populate("uploadedBy", "fullName email photoURL") // Populate user details (if needed)
       .sort({ createdAt: -1 }); // Sort by latest first
 
@@ -158,7 +163,10 @@ export const getClassroomMaterials = async (req, res) => {
     console.error("Error fetching classroom materials:", error.message);
     res
       .status(500)
-      .json({ message: "Failed to fetch materials in getClassroomMaterials", error: error.message });
+      .json({
+        message: "Failed to fetch materials in getClassroomMaterials",
+        error: error.message,
+      });
   }
 };
 
@@ -299,50 +307,50 @@ export const uploadMaterials = async (req, res) => {
       .json({ message: "Failed to upload materials", error: error.message });
   } */
 
-      try {
-        upload(req, res, async (err) => {
-          if (err) {
-            return res.status(400).json({ message: err.message });
-          }
-    
-          const userId = req.user._id;
-          const { title, description, subjectId } = req.body;
-          const files = req.files;
-    
-          if (!files?.length || !title || !description) {
-            return res.status(400).json({
-              message: "All fields (title, description, files) are required.",
-            });
-          }
-    
-          const fileUrls = files.map((file) => {
-            // Clean the filename by removing spaces and converting to lowercase
-            const cleanFilename = file.filename.replace(/\s+/g, "_").toLowerCase();
-      
-            return `http://localhost:5001/uploads/materials/${cleanFilename}`;
-          });
-    
-          // Save uploaded materials to the database
-          const savedMaterials = await ClassroomMaterial.create({
-            title,
-            description,
-            fileUrls,
-            subjectId,
-            classroomId: req.params.classroomId,
-            uploadedBy: userId,
-          });
-    
-          res.status(201).json({
-            message: "Materials uploaded successfully",
-            materials: savedMaterials,
-          });
-        });
-      } catch (error) {
-        console.error("Error in uploadMaterials controller:", error);
-        res.status(500).json({ message: "Failed to upload materials", error: error.message });
+  try {
+    upload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
       }
 
+      const userId = req.user._id;
+      const { title, description, subjectId } = req.body;
+      const files = req.files;
 
+      if (!files?.length || !title || !description) {
+        return res.status(400).json({
+          message: "All fields (title, description, files) are required.",
+        });
+      }
+
+      const fileUrls = files.map((file) => {
+        // Clean the filename by removing spaces and converting to lowercase
+        const cleanFilename = file.filename.replace(/\s+/g, "_").toLowerCase();
+
+        return `http://localhost:5001/uploads/materials/${cleanFilename}`;
+      });
+
+      // Save uploaded materials to the database
+      const savedMaterials = await ClassroomMaterial.create({
+        title,
+        description,
+        fileUrls,
+        subjectId,
+        classroomId: req.params.classroomId,
+        uploadedBy: userId,
+      });
+
+      res.status(201).json({
+        message: "Materials uploaded successfully",
+        materials: savedMaterials,
+      });
+    });
+  } catch (error) {
+    console.error("Error in uploadMaterials controller:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to upload materials", error: error.message });
+  }
 };
 
 export const deleteMaterials = async (req, res) => {
@@ -373,10 +381,14 @@ export const deleteMaterials = async (req, res) => {
     // Delete the material from the database
     await ClassroomMaterial.findByIdAndDelete(materialId);
 
-    res.status(200).json({ message: "Material and files deleted successfully" });
+    res
+      .status(200)
+      .json({ message: "Material and files deleted successfully" });
   } catch (error) {
     console.error("Error deleting material:", error);
-    res.status(500).json({ message: "Internal Server Error",error:error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 export const deleteClassroom = async (req, res) => {
@@ -435,6 +447,85 @@ export const JoinClassroom = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+export const addTeacher = async (req, res) => {
+  try {
+    const { email } = req.body; // Extract email from request body
+    const { classroomId } = req.params; // Extract classroom ID from request params
+
+    // Check if the teacher exists in the User collection
+    const teacher = await User.findOne({ email });
+
+    if (!teacher || teacher.role != "teacher") {
+      return res
+        .status(404)
+        .json({
+          message:
+            "Teacher not found. Please ask them to sign up as teacher first.",
+        });
+    }
+
+    // Check if the teacher is already added to the classroom
+    const existingMember = await Member.findOne({
+      classroomId,
+      userId: teacher._id,
+    });
+
+    if (existingMember) {
+      return res
+        .status(400)
+        .json({ message: "Teacher is already a member of this classroom." });
+    }
+
+    // Add the teacher to the Members collection
+    const newMember = new Member({
+      userId: teacher._id, // Teacher's ID
+      classroomId, // Classroom ID
+      role: "teacher",
+    });
+
+    await newMember.save();
+
+    res
+      .status(201)
+      .json({ message: "Teacher successfully added to the classroom!" });
+  } catch (error) {
+    console.error("Error adding teacher:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const deleteMember = async (req, res) => {
+  try {
+    const { memberId } = req.body; // Extract memberId from the request body
+    const { classroomId } = req.params; // Extract classroomId from the request params
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) {
+      return res.status(404).json({ error: "Classroom not found" });
+    }
+
+    // Prevent removing the classroom creator (owner)
+    if (classroom.createdBy == memberId) {
+      return res
+        .status(403)
+        .json({ message: "Cannot remove the classroom creator" });
+    }
+    // Check if the member exists in the given classroom
+    const member = await Member.findOne({ classroomId, userId: memberId });
+
+    if (!member) {
+      return res
+        .status(404)
+        .json({ error: "Member not found in this classroom" });
+    }
+
+    // Remove the member from the database
+    await Member.findOneAndDelete({ classroomId, userId: memberId });
+
+    return res.json({ message: "Member removed successfully" });
+  } catch (error) {
+    console.error("Error removing member:", error);
+    return res.status(500).json({ error: "Failed to remove member" });
+  }
+};
 
 export const getSubjects = async (req, res) => {
   try {
@@ -464,13 +555,21 @@ export const addSubject = async (req, res) => {
     // Check if the subject already exists in this classroom
     const existingSubject = await Subject.findOne({ name, classroomId });
     if (existingSubject) {
-      return res.status(400).json({ message: "Subject already exists in this classroom" });
+      return res
+        .status(400)
+        .json({ message: "Subject already exists in this classroom" });
     }
 
-    const newSubject = new Subject({ name, classroomId,createdBy:req.user._id });
+    const newSubject = new Subject({
+      name,
+      classroomId,
+      createdBy: req.user._id,
+    });
     await newSubject.save();
 
-    res.status(201).json({ message: "Subject added successfully", subject: newSubject });
+    res
+      .status(201)
+      .json({ message: "Subject added successfully", subject: newSubject });
   } catch (error) {
     console.error("Error adding subject:", error.message);
     res.status(500).json({ message: "Failed to add subject" });
