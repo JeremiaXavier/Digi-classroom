@@ -235,16 +235,24 @@ export const getAllSubmissionsForAssignment = async (req, res) => {
 // ✅ Grade a submission
 export const gradeSubmission = async (req, res) => {
   try {
+    const { submissionId } = req.params;
     const { grade, feedback } = req.body;
+    const teacherId = req.user._id; // Get the teacher's ID from auth middleware
 
-    const submission = await Submission.findByIdAndUpdate(
-      req.params.id,
-      { grade, feedback, gradedBy: req.user.id },
-      { new: true }
-    );
+    const submission = await Submission.findById(submissionId);
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
 
-    res.json({ success: true, submission });
+    // Update only provided fields
+    if (grade) submission.grade = grade;
+    if (feedback) submission.feedback = feedback;
+    submission.gradedBy = teacherId;
+
+    await submission.save();
+
+    res.json({ message: "Submission updated successfully", submission });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ message: "Error updating submission", error });
   }
 };

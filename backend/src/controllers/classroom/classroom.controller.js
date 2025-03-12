@@ -42,7 +42,7 @@ export const createClassrooms = async (req, res) => {
 };
 
 export const getClassrooms = async (req, res) => {
-  const userId = req.user?._id; // Safely access userId from req.user
+  const userId = req.user?._id; 
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized access" });
   }
@@ -52,34 +52,42 @@ export const getClassrooms = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized access" });
     }
 
-    // Fetch created classrooms
-    const createdClassrooms = await Classroom.find({
-      createdBy: userId,
-    }).lean();
+    // Fetch classrooms created by the teacher
+    const createdClassrooms = await Classroom.find({ createdBy: userId })
+      .populate("createdBy", "fullName photoURL") // ✅ Fetch fullName & photoURL of creator
+      .lean();
+
     const createdClassroomsWithRole = createdClassrooms.map((classroom) => ({
       ...classroom,
       role: "teacher",
-      createdBy: { name: "you" },
+      createdBy: {
+        fullName: classroom.createdBy?.fullName || "Unknown",
+        photoURL: classroom.createdBy?.photoURL || null,
+      },
     }));
 
-    // Fetch joined classrooms with populated data
+    // Fetch classrooms the teacher has joined
     const joinedClassrooms = await Member.find({ userId })
-      .populate("classroomId", "name description createdBy")
       .populate({
         path: "classroomId",
+        select: "name description createdBy",
         populate: {
           path: "createdBy",
-          select: "fullName", // Select only the name from the 'createdBy' user
+          select: "fullName photoURL", // ✅ Fetch fullName & photoURL of creator
         },
-      });
+      })
+      .lean();
 
     const joinedClassroomsWithRole = joinedClassrooms.map((member) => ({
       ...member.classroomId,
       role: member.role,
-      createdBy: member.classroomId.createdBy?.name || null, // Use optional chaining
+      createdBy: {
+        fullName: member.classroomId.createdBy?.fullName || "Unknown",
+        photoURL: member.classroomId.createdBy?.photoURL || null,
+      },
     }));
 
-    // Merge all classrooms into one array and remove duplicates by _id
+    // Merge all classrooms and remove duplicates
     const allClassrooms = [
       ...joinedClassroomsWithRole,
       ...createdClassroomsWithRole,
@@ -95,6 +103,7 @@ export const getClassrooms = async (req, res) => {
   }
 };
 
+
 export const StudentGetClassrooms = async (req, res) => {
   try {
     const userId = req.user?._id; // Safely access userId from req.user
@@ -104,15 +113,15 @@ export const StudentGetClassrooms = async (req, res) => {
 
     // Fetch joined classrooms with populated data
     const joinedClassrooms = await Member.find({ userId })
-      .populate({
-        path: "classroomId",
-        select: "name description createdBy",
-        populate: {
-          path: "createdBy",
-          select: "fullName",
-        },
-      })
-      .lean(); // Convert Mongoose documents to plain objects
+  .populate({
+    path: "classroomId",
+    select: "name description createdBy ",
+    populate: {
+      path: "createdBy",
+      select: "fullName photoURL",  // Include photoURL here
+    },
+  })
+  .lean(); // Convert Mongoose documents to plain objects
 
     // Map to include the role
     const formattedClassrooms = joinedClassrooms
@@ -123,6 +132,7 @@ export const StudentGetClassrooms = async (req, res) => {
           name: member.classroomId.name,
           description: member.classroomId.description,
           createdBy: member.classroomId.createdBy?.fullName || "Unknown",
+          photoURL:member.classroomId.createdBy?.photoURL || null,
           role: member.role,
         };
       })

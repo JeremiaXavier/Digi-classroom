@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "@/lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth-slice";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const TeacherAssessmentsPage = () => {
   const navigate = useNavigate();
@@ -14,7 +17,6 @@ const TeacherAssessmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch assessments
     const fetchAssessments = async () => {
       try {
         const response = await axiosInstance.get("/assess/view", {
@@ -28,7 +30,6 @@ const TeacherAssessmentsPage = () => {
       }
     };
 
-    // Fetch classrooms
     const fetchClassrooms = async () => {
       try {
         const response = await axiosInstance.get("/c/all", {
@@ -44,14 +45,27 @@ const TeacherAssessmentsPage = () => {
     fetchClassrooms();
   }, [idToken]);
 
-  // Open the modal and set the selected assessment
   const openModal = (assessmentId) => {
     setSelectedAssessment(assessmentId);
     setSelectedClassrooms([]);
     setIsModalOpen(true);
   };
+  const handleDeleteAssessment = async (assessmentId) => {
+    if (!window.confirm("Are you sure you want to delete this assessment?")) return;
+  
+    try {
+      await axiosInstance.delete(`/assess/delete/${assessmentId}`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+  
+      setAssessments((prev) => prev.filter((assessment) => assessment._id !== assessmentId));
+      toast.success("Assessment deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete assessment.");
+    }
+  };
+  
 
-  // Handle classroom selection
   const toggleClassroomSelection = (classroomId) => {
     setSelectedClassrooms((prev) =>
       prev.includes(classroomId)
@@ -60,7 +74,6 @@ const TeacherAssessmentsPage = () => {
     );
   };
 
-  // Handle assessment assignment
   const assignAssessment = async () => {
     if (!selectedAssessment || selectedClassrooms.length === 0) {
       toast.error("Please select at least one classroom.");
@@ -88,73 +101,68 @@ const TeacherAssessmentsPage = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">📋 All Created Assessments</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">📋 Your Assessments</h1>
 
       {assessments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assessments.map((assessment) => (
             <div
               key={assessment._id}
-              className="bg-white p-4 shadow-md rounded-lg"
+              className="bg-white shadow-md hover:shadow-lg transition p-6 rounded-lg border"
             >
-              <h2 className="text-xl font-semibold">{assessment.title}</h2>
-              <p className="text-gray-600">{assessment.description}</p>
-              <div className="mt-3 flex space-x-2">
-                <button
-                  onClick={() => navigate(`/assessment/${assessment._id}`)}
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => openModal(assessment._id)}
-                  className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-                >
+              <h2 className="text-lg font-semibold text-gray-800">
+                {assessment.title}
+              </h2>
+              <p className="text-gray-600 mt-1 text-sm">{assessment.description}</p>
+              <div className="mt-4 flex gap-3">
+                
+                <Button onClick={() => openModal(assessment._id)}>
                   Assign to Classroom
-                </button>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDeleteAssessment(assessment._id)}
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-gray-500">No assessments have been created yet.</p>
+        <p className="text-gray-500 text-center">No assessments found.</p>
       )}
 
       {/* Assign Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Assign Assessment</h2>
-            <p className="mb-2">Select classrooms:</p>
-            {classrooms.map((classroom) => (
-              <div key={classroom._id} className="flex items-center mb-2">
-                <input
-                  type="checkbox"
-                  value={classroom._id}
-                  onChange={() => toggleClassroomSelection(classroom._id)}
-                  className="mr-2"
-                />
-                <label>{classroom.name}</label>
-              </div>
-            ))}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Assessment</DialogTitle>
+          </DialogHeader>
 
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={assignAssessment}
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-              >
-                Assign
-              </button>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">Select classrooms:</p>
+            <div className="grid grid-cols-2 gap-3">
+              {classrooms.map((classroom) => (
+                <div key={classroom._id} className="flex items-center space-x-3">
+                  <Checkbox
+                    checked={selectedClassrooms.includes(classroom._id)}
+                    onCheckedChange={() => toggleClassroomSelection(classroom._id)}
+                  />
+                  <span className="text-sm text-gray-700">{classroom.name}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={assignAssessment}>Assign</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

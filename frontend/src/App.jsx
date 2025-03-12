@@ -31,6 +31,7 @@ import StudentAssessments from "./pages/assessment/Student/ViewAssessments.jsx";
 import ExaminationPage from "./pages/assessment/Student/Examination/ExaminationLayout.jsx";
 import AssignmentDetails from "./pages/student-view/StudentAssignments.jsx";
 import AssignmentDetailsTeacher from "./pages/teacher-page/AssignmentDetails.jsx";
+import Landing from "./pages/student-view/Landing.jsx";
 
 function App() {
   const { authUser, isAuthenticated, set } = useAuthStore();
@@ -71,8 +72,8 @@ function App() {
     );
   }
   return (
-    <div className="flex flex-col overflow-hidden bg-white">
-      <Toaster position="top-right" />
+    <div className="flex flex-col sm:overflow-scroll md:overflow-hidden bg-white">
+      <Toaster position="top-center" />
 
       <Routes>
         <Route
@@ -96,6 +97,8 @@ function App() {
           <Route path="view" element={<StudentAssessments />} />
         </Route>
         <Route path="assessment/s/start/:id" element={<ExaminationPage />} />
+
+
         <Route
           path="student/dashboard"
           element={
@@ -104,6 +107,7 @@ function App() {
             </CheckRole>
           }
         >
+          <Route path="" element={<Landing />} />
           <Route path="c/:id" element={<StudentClassroomDetails />} />
           <Route path="c" element={<StudentClassrooms />} />
           <Route path="r" element={<Classmates />} />
@@ -120,6 +124,7 @@ function App() {
             </CheckRole>
           }
         >
+          <Route path="" element={<Landing />} />
           <Route path="c/:id" element={<TeacherClassroomDetails />} />
           <Route path="a/:assignmentId" element={<AssignmentDetailsTeacher />} />
           <Route path="c" element={<ManageClassrooms />} />

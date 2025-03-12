@@ -170,3 +170,22 @@ export const EvaluateAnswers = async(req,res)=>{
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+
+export const deleteAssessment = async(req,res)=>{
+  try {
+    const { assessmentId } = req.params;
+
+    // Find and delete the assessment
+    const deletedAssessment = await Assessment.findByIdAndDelete(assessmentId);
+
+    if (!deletedAssessment) {
+      return res.status(404).json({ message: "Assessment not found" });
+    }
+
+    res.status(200).json({ message: "Assessment deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting assessment:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
