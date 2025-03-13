@@ -5,7 +5,6 @@ import { useAuthStore } from "@/store/auth-slice";
 import toast from "react-hot-toast";
 import Switcher from "@/components/assessment/Switcher";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 
 const CreateAssessment = () => {
   const [isChecked, setIsChecked] = useState(false);
@@ -64,11 +63,10 @@ const CreateAssessment = () => {
   // Set correct answer from radio selection
   const handleChoiceAnswerChange = (qIndex, cIndex) => {
     const updatedQuestions = [...questions];
-
+  
     if (updatedQuestions[qIndex].isMultiple) {
       // ✅ Allow multiple answers (toggle checkbox)
-      updatedQuestions[qIndex].choices[cIndex].isCorrect =
-        !updatedQuestions[qIndex].choices[cIndex].isCorrect;
+      updatedQuestions[qIndex].choices[cIndex].isCorrect = !updatedQuestions[qIndex].choices[cIndex].isCorrect;
     } else {
       // ✅ Only allow one correct answer (radio button behavior)
       updatedQuestions[qIndex].choices = updatedQuestions[qIndex].choices.map(
@@ -78,9 +76,10 @@ const CreateAssessment = () => {
         })
       );
     }
-
+  
     setQuestions(updatedQuestions);
   };
+  
 
   const handleAnswerChange = (qIndex, value) => {
     const updatedQuestions = [...questions];
@@ -98,13 +97,13 @@ const CreateAssessment = () => {
   // Handle form submission
   const handleSubmit = async () => {
     try {
-      const response = await axiosInstance.post(
+       const response = await axiosInstance.post(
         "/assess/create",
         { title, questions },
         {
           headers: { Authorization: `Bearer ${idToken}` },
         }
-      );
+      ); 
 
       console.log("Assessment Submitted:", questions);
       toast.success("Assessment Created Successfully!");
