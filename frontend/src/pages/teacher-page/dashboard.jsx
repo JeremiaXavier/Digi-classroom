@@ -119,8 +119,9 @@ const TeacherDashboard = () => {
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 p-6 bg-white rounded-lg shadow-lg z-10 w-48">
+                <div className="absolute right-2  mt-2 p-10 bg-white rounded-lg shadow-lg z-10">
                   <ul className="py-2 text-gray-700">
+                    {/* Profile card */}
                     <li className="flex flex-col items-center space-y-2 px-4 py-3 hover:bg-gray-100 cursor-pointer">
                       <img
                         src={authUser.photoURL}
@@ -132,28 +133,26 @@ const TeacherDashboard = () => {
                         <p className="text-lg font-semibold">
                           {authUser.fullName}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {authUser.email}
-                        </p>
+                        <p className="text-sm text-gray-500">{authUser.email}</p>
                       </div>
                     </li>
+
+                    {/* Divider */}
                     <li className="border-t border-gray-200"></li>
+
+                    {/* Manage Profile Option */}
                     <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <Link
-                        to="/manage-profile"
-                        className="flex items-center space-x-2"
-                      >
+                      <Link to="/manage-profile" className="flex items-center space-x-2">
                         <User size={16} />
                         <span className="text-sm">Manage Profile</span>
                       </Link>
                     </li>
+
+                    {/* Logout Option */}
                     <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-2 w-full"
-                      >
+                      <button onClick={handleLogout} className="flex items-center space-x-2 w-full">
                         <LogOut size={16} />
-                        <span className="text-sm">Logout</span>
+                        <span className="text-sm">Logout from All Sessions</span>
                       </button>
                     </li>
                   </ul>

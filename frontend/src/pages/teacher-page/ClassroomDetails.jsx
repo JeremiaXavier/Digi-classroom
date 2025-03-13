@@ -547,6 +547,7 @@ const TeacherClassroomDetails = () => {
                 </div>
 
                 {/* Accept Responses Checkbox */}
+                <label htmlFor="" className="m-2">Accept responses</label>
                 <Checkbox
                   checked={createAssignment.acceptResponses}
                   onCheckedChange={(checked) =>
