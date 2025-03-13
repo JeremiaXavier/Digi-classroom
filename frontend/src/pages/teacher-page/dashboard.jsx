@@ -12,7 +12,7 @@ import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import CreateClassroom from "./CreateClassroom";
 import { useAuthStore } from "@/store/auth-slice";
-
+import logo from "../../assets/edupilot.png";
 const TeacherDashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
@@ -33,74 +33,57 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-gray-100">
+    <div className="flex h-screen w-screen bg-white ">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-50 text-gray-900 shadow-xl flex flex-col h-screen">
+      <aside className="w-64 bg-gradient-to-b from-[#af47e8] to-[#7a1cbf] text-white shadow-xl flex flex-col h-screen">
         {/* Logo */}
-        <div className="flex items-center justify-center h-20 border-b border-blue-500">
-          <h1 className="text-2xl font-bold">Digi-Classroom</h1>
+        <div className="flex justify-center py-6">
+          <div className="bg-white p-2 rounded-lg shadow-md">
+            <img src={logo} alt="App Logo" className="w-36" />
+          </div>
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-4">
-            
+        <nav className="flex-1 px-5">
+          <ul className="space-y-3">
             <li>
               <Link
                 to="c"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#9228d6] transition-all duration-300"
               >
-                <Home size={24} />
-                <span> Classrooms</span>
-              </Link>
-            </li>
-             <li>
-              <Link
-                to="/assessment"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
-              >
-                <Clipboard size={24} />
-                <span>Assessment Portal</span>
-              </Link>
-            </li>
-            {/*<li>
-              <Link
-                to="g"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
-              >
-                <Star size={24} />
-                <span>Grades</span>
+                <Home size={22} className="text-white" />
+                <span className="font-medium">Classrooms</span>
               </Link>
             </li>
             <li>
               <Link
-                to="m"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+                to="/assessment"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#9228d6] transition-all duration-300"
               >
-                <BookOpen size={24} />
-                <span>Manage Students</span>
+                <Clipboard size={22} className="text-white" />
+                <span className="font-medium">Assessment Portal</span>
               </Link>
-            </li> */}
+            </li>
             <li>
               <button
                 onClick={openModal}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-500 transition-all duration-300 w-full text-left"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#9228d6] transition-all duration-300 w-full text-left"
               >
-                <PlusCircle size={24} />
-                <span>Create Classroom</span>
+                <PlusCircle size={22} className="text-white" />
+                <span className="font-medium">Create Classroom</span>
               </button>
             </li>
           </ul>
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-blue-500">
+        <div className="p-5 border-t border-[#9228d6]">
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-blue-500 transition-all duration-300"
+            className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-red-600 transition-all duration-300"
           >
-            <LogOut size={24} />
-            <span>Logout</span>
+            <LogOut size={22} className="text-white" />
+            <span className="font-medium">Logout</span>
           </button>
         </div>
       </aside>
