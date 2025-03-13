@@ -147,5 +147,5 @@ const SidebarButton = ({ icon: Icon, text, onClick }) => (
     {text}
   </button>
 );
-/
+
 export default ExamSecurityLayout;
