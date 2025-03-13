@@ -4,6 +4,8 @@ import { axiosInstance } from "@/lib/axios";
 import { useAuthStore } from "@/store/auth-slice";
 import toast from "react-hot-toast";
 import Switcher from "@/components/assessment/Switcher";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 
 const CreateAssessment = () => {
   const [isChecked, setIsChecked] = useState(false);
@@ -62,10 +64,11 @@ const CreateAssessment = () => {
   // Set correct answer from radio selection
   const handleChoiceAnswerChange = (qIndex, cIndex) => {
     const updatedQuestions = [...questions];
-  
+
     if (updatedQuestions[qIndex].isMultiple) {
       // ✅ Allow multiple answers (toggle checkbox)
-      updatedQuestions[qIndex].choices[cIndex].isCorrect = !updatedQuestions[qIndex].choices[cIndex].isCorrect;
+      updatedQuestions[qIndex].choices[cIndex].isCorrect =
+        !updatedQuestions[qIndex].choices[cIndex].isCorrect;
     } else {
       // ✅ Only allow one correct answer (radio button behavior)
       updatedQuestions[qIndex].choices = updatedQuestions[qIndex].choices.map(
@@ -75,10 +78,9 @@ const CreateAssessment = () => {
         })
       );
     }
-  
+
     setQuestions(updatedQuestions);
   };
-  
 
   const handleAnswerChange = (qIndex, value) => {
     const updatedQuestions = [...questions];
@@ -96,13 +98,13 @@ const CreateAssessment = () => {
   // Handle form submission
   const handleSubmit = async () => {
     try {
-       const response = await axiosInstance.post(
+      const response = await axiosInstance.post(
         "/assess/create",
         { title, questions },
         {
           headers: { Authorization: `Bearer ${idToken}` },
         }
-      ); 
+      );
 
       console.log("Assessment Submitted:", questions);
       toast.success("Assessment Created Successfully!");
@@ -115,21 +117,14 @@ const CreateAssessment = () => {
     <div className="w-full h-[90vh] overflow-scroll p-6 bg-white flex flex-col items-center">
       <h1 className="text-3xl text-black font-bold mb-6">📝 Create </h1>
 
-      <div className="max-w-3xl w-full text-black bg-white p-6 rounded-lg shadow">
-        <label className="block font-extrabold text-gray-700 font-medium mt-3 mb-2">
-          Name of Assessment
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-2 border rounded mb-10"
-          placeholder="Enter your assessment name"
-        />
+      <Card className="w-full max-w-4xl p-6 shadow-lg bg-white rounded-xl">
+        <CardContent>
+        <label className="block text-xl font-semibold mb-2">Assessment Title</label>
+        <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter assessment name" />
         {questions.map((q, qIndex) => (
-          <div key={qIndex} className="mb-6">
+          <div key={qIndex} className="mt-6 p-4 border rounded-lg bg-gray-100">
             {/* Question Number */}
-            <h2 className="text-lg font-bold text-gray-800 mb-2">
+            <h2 className="text-lg font-semibold mb-2">
               Question {qIndex + 1}
             </h2>
 
@@ -139,29 +134,15 @@ const CreateAssessment = () => {
                 <label className="block text-gray-700 font-medium mb-2">
                   Add Paragraph (Optional):
                 </label>
-                <textarea
-                  value={q.paragraph}
-                  onChange={(e) =>
-                    handleParagraphChange(qIndex, e.target.value)
-                  }
-                  className="w-full p-2 border rounded"
-                  rows="4"
-                  placeholder="Enter paragraph (if needed)"
-                />
+                <Textarea value={q.paragraph} onChange={(e) => handleParagraphChange(qIndex, e.target.value)} rows="3" />
               </>
             )}
 
             {/* Question Input */}
-            <label className="block text-gray-700 font-medium mt-3">
+            <label className="block mt-3">
               {q.type === "paragraph" ? "Paragraph Question:" : "Question:"}
             </label>
-            <input
-              type="text"
-              value={q.question}
-              onChange={(e) => handleQuestionChange(qIndex, e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your question"
-            />
+            <Input type="text" value={q.question} onChange={(e) => handleQuestionChange(qIndex, e.target.value)} />
 
             {/* MCQ Choices */}
             {q.type === "mcq" && (
@@ -169,16 +150,17 @@ const CreateAssessment = () => {
                 <div>
                   <h2>Enable Multiple Answers:</h2>
                   <Switcher
-                    isChecked={q.isMultiple|| false} // ✅ Use question-specific state
+                    isChecked={q.isMultiple || false} // ✅ Use question-specific state
                     setIsChecked={() => {
-                      
                       const updatedQuestions = [...questions];
                       updatedQuestions[qIndex].isMultiple = !q.isMultiple;
-                      updatedQuestions[qIndex].choices = updatedQuestions[qIndex].choices.map(choice => ({
+                      updatedQuestions[qIndex].choices = updatedQuestions[
+                        qIndex
+                      ].choices.map((choice) => ({
                         ...choice,
                         isCorrect: false, // ✅ Reset all answers
                       }));
-                  
+
                       setQuestions(updatedQuestions);
                     }}
                   />
