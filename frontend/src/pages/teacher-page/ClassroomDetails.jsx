@@ -108,26 +108,25 @@ const TeacherClassroomDetails = () => {
 
     fetchClassrooms();
   }, []);
-  
+
   const { id } = useParams();
   const classrooms = classroomStore((state) => state.classrooms); // Get all classrooms from the store
-  /*   const {  set,assignments } = useStore(classroomStore);
-   */ const { assignments, set, removeAssignment } = useStore(classroomStore); // Zustand store
   const [localAssignments, setLocalAssignments] = useState([]);
   // Find the selected classroom
+  const { set } = classroomStore();
   const classroom = classrooms.find((c) => c._id === id);
-
+  /* const [classroom,setClassroom]  = useState([]); */
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
-  /*   const [assignments, setAssignments] = useState([]);
-   */ const [members, setMembers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [members, setMembers] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [newTeacher, setNewTeacher] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState(null);
   const [createDialogType, setCreateDialogType] = useState(null);
-  const [view, setView] = useState("materials");
+  const [view, setView] = useState('materials');
   const navigate = useNavigate();
   const [createAssignment, setCreateAssignment] = useState({
     title: "",
@@ -173,7 +172,7 @@ const TeacherClassroomDetails = () => {
         results[2].status === "fulfilled" ? results[2].value : null;
 
       // Set state only if data is available
-      if (assignmentsRes) set({ assignments: assignmentsRes.data.assignments });
+      if (assignmentsRes) setAssignments(assignmentsRes.data.assignments);
       if (memberRes) setMembers(memberRes.data.allMembers);
       if (materialRes) setMaterials(materialRes.data.materials);
 
@@ -261,15 +260,12 @@ const TeacherClassroomDetails = () => {
 
   const handleRemoveMember = async (memberId) => {
     try {
-      const response = await axiosInstance.delete(
-        `/c/${id}/remove-member`,
-        {
-          data: { memberId }, // Correct way to pass body in DELETE request
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
+      const response = await axiosInstance.delete(`/c/${id}/remove-member`, {
+        data: { memberId }, // Correct way to pass body in DELETE request
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
 
       toast.success("Member removed successfully");
 
@@ -331,41 +327,6 @@ const TeacherClassroomDetails = () => {
   };
 
   const handleUploadMaterial = async () => {
-    /* if (!title || !description || !files || files.length === 0) {
-      alert("Please provide title, description, and select at least one file");
-      return;
-    }
-
-    console.log("Uploading:", title, description);
-
-    const formData = new FormData();
-    Array.from(files).forEach((file, index) => {
-      formData.append(`files`, file); // Use `files[]` to send multiple files properly
-    });
-
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("subjectId", selectedSubject.trim()); // Trim any spaces
-
-    try {
-      const response = await axiosInstance.post(`/c/${id}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        // Handle all success cases (200-299)
-        toast.success("Materials uploaded successfully!");
-      }
-    } catch (error) {
-      console.error(
-        "Error uploading materials:",
-        error.response?.data || error.message
-      );
-      alert("Failed to upload materials");
-    } */
     if (!title.trim() || !description.trim() || !files.length) {
       toast.error(
         "Please provide title, description, and select at least one file"
@@ -514,7 +475,7 @@ const TeacherClassroomDetails = () => {
   };
 
   return (
-    <div className="p-1 bg-white h-[95%] space-y-6 overflow-scroll">
+    <div className="p-1 bg-white h-[95%] space-y-6 overflow-auto">
       <div className="flex gap-4">
         {createDialogType === "Assignment" && (
           <Sheet open={true} onOpenChange={closeCreateDialog}>
@@ -725,25 +686,23 @@ const TeacherClassroomDetails = () => {
           </Sheet>
         )}
       </div>
-      <div className="flex w-full h-8 justify-around items-center">
-        <div
-          className="flex cursor-pointer"
-          onClick={() => setView("materials")}
-        >
-          Materials
-        </div>
-        <div
-          className="flex cursor-pointer"
-          onClick={() => setView("assignments")}
-        >
-          Assignments
-        </div>
-        <div className="flex cursor-pointer" onClick={() => setView("members")}>
-          Members
-        </div>
+      <div className="flex w-full h-10 justify-around items-center  md:h-12">
+        {["materials", "assignments", "members"].map((tab) => (
+          <div
+            key={tab}
+            className={`flex-1 text-center py-2 cursor-pointer transition ${
+              view === tab
+                ? "border-b-2 border-blue-500 font-semibold"
+                : "text-gray-500"
+            }`}
+            onClick={() => setView(tab)}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </div>
+        ))}
       </div>
 
-      <div className="p-6 m-6 bg-white overflow-scroll">
+      <div className="p-4 sm:p-2 m-2 sm:m-4 flex flex-col bg-white overflow-scroll">
         {view === "materials" &&
           (loading ? (
             <div className="flex items-center justify-center h-screen">
@@ -766,7 +725,7 @@ const TeacherClassroomDetails = () => {
             </div>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
-              <div className="flex justify-end">
+              <div className="hidden sm:flex justify-end ">
                 <button
                   className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
                   onClick={() => {
@@ -777,110 +736,120 @@ const TeacherClassroomDetails = () => {
                   <span>Create New</span>
                 </button>
               </div>
-              {materials.map((material) => (
-                <Card
-                  key={material._id}
-                  className="shadow-md border rounded-lg"
-                >
-                  <CardHeader className="flex flex-row gap-3 justify-between items-center">
-                    <CardTitle>{material.title}</CardTitle>
+              <div className="grid gap-4 grid-cols-1 w-full">
+                {materials.map((material) => (
+                  <Card
+                    key={material._id}
+                    className="shadow-md border rounded-lg cursor-pointer hover:shadow-lg transition p-4 w-full relative"
+                  >
+                    {/* Trash Button - Positioned at Top Right */}
                     <button
                       onClick={() => handleDeleteMaterial(material._id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
+                      className="absolute bottom-4 right-3 text-red-500 hover:text-red-700 text-sm"
                     >
                       <LucideTrash2 size={20} />
                     </button>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{material.description}</p>
-                    <div className="mt-2 space-y-3">
-                      {material.fileUrls && material.fileUrls.length > 0 ? (
-                        material.fileUrls.map((fileUrl, index) => {
-                          if (!fileUrl) return null;
 
-                          const filename = fileUrl.split("/").pop();
-                          const fileExtension = filename
-                            .split(".")
-                            .pop()
-                            .toLowerCase();
-                          const isPreviewable = [
-                            "jpg",
-                            "jpeg",
-                            "png",
-                            "gif",
-                            "bmp",
-                            "webp",
-                            "mp4",
-                            "webm",
-                            "ogg",
-                            "pdf",
-                            "doc",
-                            "docx",
-                          ].includes(fileExtension);
+                    <CardHeader className="flex flex-col sm:flex-row justify-between items-start">
+                      <CardTitle className="truncate text-lg sm:text-xl">
+                        {material.title}
+                      </CardTitle>
+                    </CardHeader>
 
-                          return (
-                            <div
-                              key={index}
-                              className="flex items-center gap-3 border p-3 rounded-lg hover:bg-gray-50 transition"
-                            >
-                              {getFileIcon(fileExtension)}
-                              <span className="flex-1 truncate text-gray-700">
-                                {filename}
-                              </span>
+                    <CardContent>
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {material.description}
+                      </p>
 
-                              {/* Preview Button */}
-                              {isPreviewable && (
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openPreview(fileUrl, fileExtension);
-                                  }}
-                                  variant="outline"
-                                  size="icon"
-                                  className="text-green-600 hover:bg-green-100"
-                                >
-                                  <Eye />
-                                </Button>
-                              )}
+                      <div className="mt-2 space-y-3">
+                        {material.fileUrls && material.fileUrls.length > 0 ? (
+                          material.fileUrls.map((fileUrl, index) => {
+                            if (!fileUrl) return null;
 
-                              {/* Download Button */}
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownload(fileUrl, filename);
-                                }}
-                                variant="outline"
-                                size="icon"
-                                className="text-blue-600 hover:bg-blue-100"
+                            const filename = fileUrl.split("/").pop();
+                            const fileExtension = filename
+                              .split(".")
+                              .pop()
+                              .toLowerCase();
+                            const isPreviewable = [
+                              "jpg",
+                              "jpeg",
+                              "png",
+                              "gif",
+                              "bmp",
+                              "webp",
+                              "mp4",
+                              "webm",
+                              "ogg",
+                              "pdf",
+                              "doc",
+                              "docx",
+                            ].includes(fileExtension);
+
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center gap-3 border p-3 rounded-lg hover:bg-gray-50 transition flex-wrap sm:flex-nowrap"
                               >
-                                <Download />
-                              </Button>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No files available
-                        </p>
-                      )}
-                    </div>
+                                {getFileIcon(fileExtension)}
+                                <span className="flex-1 truncate text-gray-700 text-sm sm:text-base">
+                                  {filename}
+                                </span>
 
-                    <p className="text-sm text-gray-500 mt-3 flex flex-row items-center gap-3">
-                      {material.uploadedBy?.photoURL ? (
-                        <img
-                          src={material.uploadedBy.photoURL}
-                          alt="User Avatar"
-                          className="w-8 h-8 rounded-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div></div>
-                      )}
-                      {material.uploadedBy?.fullName || "Unknown"}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+                                <div className="flex gap-2">
+                                  {isPreviewable && (
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openPreview(fileUrl, fileExtension);
+                                      }}
+                                      variant="outline"
+                                      size="icon"
+                                      className="text-green-600 hover:bg-green-100"
+                                    >
+                                      <Eye />
+                                    </Button>
+                                  )}
+
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDownload(fileUrl, filename);
+                                    }}
+                                    variant="outline"
+                                    size="icon"
+                                    className="text-blue-600 hover:bg-blue-100"
+                                  >
+                                    <Download />
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No files available
+                          </p>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-gray-500 mt-3 flex items-center gap-3">
+                        {material.uploadedBy?.photoURL ? (
+                          <img
+                            src={material.uploadedBy.photoURL}
+                            alt="User Avatar"
+                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300"></div>
+                        )}
+                        {material.uploadedBy?.fullName || "Unknown"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           ))}
         {view === "assignments" &&
@@ -916,64 +885,97 @@ const TeacherClassroomDetails = () => {
                   <span>Assignment</span>
                 </button>
               </div>
+              <div className="grid gap-4 grid-cols-1 w-full">
+                {localAssignments.map((assignment) => (
+                  <Card
+                    key={assignment._id}
+                    className="shadow-md border rounded-lg cursor-pointer hover:shadow-lg transition p-4 w-full"
+                    onClick={() =>
+                      navigate(`/teacher/dashboard/a/${assignment._id}`)
+                    }
+                  >
+                    <CardHeader className="flex flex-row gap-3 justify-between  items-center">
+                      <CardTitle>{assignment.title}</CardTitle>
+                      <button
+                        onClick={() => handleDeleteAssignment(assignment._id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        <LucideTrash2 size={20} />
+                      </button>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600">{assignment.description}</p>
+                      {/* Display Files */}
+                      {assignment.attachments?.length > 0 && (
+                        <div className="mt-2">
+                          <h4 className="font-semibold text-gray-700">
+                            Attachments:
+                          </h4>
+                          <ul className="flex flex-col gap-2">
+                            {assignment.attachments.map((fileUrl, index) => {
+                              const filename = fileUrl.split("/").pop();
+                              const fileExtension = filename
+                                .split(".")
+                                .pop()
+                                .toLowerCase();
+                              const isPreviewable = [
+                                "jpg",
+                                "jpeg",
+                                "png",
+                                "gif",
+                                "mp4",
+                                "pdf",
+                              ].includes(fileExtension);
 
-              {localAssignments.map((assignment) => (
-                <Card
-                  key={assignment._id}
-                  className="shadow-md border rounded-lg"
-                  onClick={() =>
-                    navigate(`/teacher/dashboard/a/${assignment._id}`)
-                  }
-                >
-                  <CardHeader className="flex flex-row gap-3 justify-between  items-center">
-                    <CardTitle>{assignment.title}</CardTitle>
-                    <button
-                      onClick={() => handleDeleteAssignment(assignment._id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      <LucideTrash2 size={20} />
-                    </button>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{assignment.description}</p>
+                              return (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-3 border p-2 rounded-lg hover:bg-gray-50 transition"
+                                >
+                                  {getFileIcon(fileExtension)}
+                                  <span className="flex-1 truncate">
+                                    {filename}
+                                  </span>
 
-                    <p className="text-sm text-gray-500 mt-3 flex flex-row items-center gap-3">
-                      {assignment.createdBy?.photoURL ? (
-                        <img
-                          src={assignment.createdBy.photoURL}
-                          alt="User Avatar"
-                          className="w-8 h-8 rounded-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div></div>
+                                  {/* Preview Button */}
+                                  {isPreviewable && (
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openPreview(fileUrl, fileExtension);
+                                      }}
+                                      variant="outline"
+                                      size="icon"
+                                      className="text-green-600 hover:bg-green-100"
+                                    >
+                                      <Eye />
+                                    </Button>
+                                  )}
+
+                                  
+                                </div>
+                              );
+                            })}
+                          </ul>
+                        </div>
                       )}
-                      {assignment.createdBy?.fullName || "Unknown"}
-                    </p>
-
-                    {/* Display Files */}
-                    {assignment.attachments?.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-semibold">Attachments:</h4>
-                        <ul className="list-disc list-inside text-blue-600">
-                          {assignment.attachments.map((file, index) => (
-                            <li key={index}>
-                              <a
-                                href={file} // Ensure this is the correct file URL
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline"
-                              >
-                                {file.split("/").pop()} {/* Show file name */}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      <p className="text-sm text-gray-500 mt-3 flex flex-row items-center gap-3">
+                        {assignment.createdBy?.photoURL ? (
+                          <img
+                            src={assignment.createdBy.photoURL}
+                            alt="User Avatar"
+                            className="w-8 h-8 rounded-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div></div>
+                        )}
+                        {assignment.createdBy?.fullName || "Unknown"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           ))}
 
@@ -986,10 +988,10 @@ const TeacherClassroomDetails = () => {
             <p className="text-gray-500">No members.</p>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-3">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button className="px-4 py-2 bg-gray-50 text-dark  hover:bg-yellow-200  border rounded-lg">
+                    <button className="px-4 py-2 bg-gray-100 text-dark  hover:bg-yellow-200  ">
                       Class Code :<b> {classroom.joinCode}</b>
                     </button>
                   </DialogTrigger>
@@ -1006,7 +1008,7 @@ const TeacherClassroomDetails = () => {
                         {classroom.joinCode}
                       </span>
                       <button
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-gray-200 flex items-center gap-2"
                         onClick={() =>
                           navigator.clipboard.writeText(classroom.joinCode)
                         }
@@ -1068,7 +1070,7 @@ const TeacherClassroomDetails = () => {
                 </Dialog>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button className="px-4 py-2 bg-gray-50 text-dark rounded hover:bg-yellow-200 flex items-center gap-2">
+                    <button className="px-4 py-2 bg-gray-100 text-dark rounded hover:bg-yellow-200 flex items-center gap-2">
                       <Users />
                       <span>Add Teacher</span>
                     </button>
@@ -1104,7 +1106,7 @@ const TeacherClassroomDetails = () => {
               {members.map((member) => (
                 <Card
                   key={member._id}
-                  className="shadow-md border rounded-lg flex justify-between items-center p-4"
+                  className=" border-none flex justify-between items-center p-4"
                 >
                   <div className="flex items-center gap-3">
                     {member.photoURL ? (
@@ -1115,7 +1117,7 @@ const TeacherClassroomDetails = () => {
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                      <div className="w-12 h-12 bg-white rounded-full"></div>
                     )}
                     <p className="text-lg text-gray-500">
                       {member.fullName || "Unknown"}
