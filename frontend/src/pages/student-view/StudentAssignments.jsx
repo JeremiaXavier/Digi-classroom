@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useStore } from "zustand";
 import { classroomStore } from "@/store/classroomStore";
-import { Textarea } from "@/components/ui/textarea";
 import { axiosInstance } from "@/lib/axios";
 import { useAuthStore } from "@/store/auth-slice";
 import toast from "react-hot-toast";
@@ -20,13 +19,14 @@ import toast from "react-hot-toast";
 const AssignmentDetails = () => {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
-  const { assignments } = useStore(classroomStore);
-  const assignment = assignments.find((a) => a._id === assignmentId);
+  const [assignment, setAssignment] = useState({});
   const { idToken } = useAuthStore();
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [comment, setComment] = useState("");
   const [submission, setSubmission] = useState(null);
+  const [grade, setGrade] = useState(null);
+  const [feedback, setFeedback] = useState("");
   useEffect(() => {
     const fetchSubmission = async () => {
       try {
@@ -42,12 +42,32 @@ const AssignmentDetails = () => {
           setSubmission(response.data);
           setIsSubmitted(true);
           setUploadedFiles(response.data.files || []);
+          if (response.data.grade) setGrade(response.data.grade);
+          if (response.data.feedback) setFeedback(response.data.feedback);
         }
       } catch (error) {
         console.error("Error fetching submission:", error);
       }
     };
     fetchSubmission();
+  }, [assignmentId, idToken,isSubmitted]);
+
+  useEffect(() => {
+    const fetchAssignment = async () => {
+      try {
+        const res = await axiosInstance.get(`/work/${assignmentId}`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+        if (res.data) {
+          setAssignment(res.data);
+        }
+      } catch (error) {
+        console.error("Error fetching submission:", error);
+      }
+    };
+    fetchAssignment();
   }, [assignmentId, idToken]);
 
   const handleFileUpload = (event) => {
@@ -70,7 +90,7 @@ const AssignmentDetails = () => {
 
     try {
       const response = await axiosInstance.post(
-        `http://localhost:5001/api/work/${assignmentId}/submit`,
+        `/work/${assignmentId}/submit`,
         formData,
         {
           headers: {
@@ -83,6 +103,7 @@ const AssignmentDetails = () => {
       if (response.data.success) {
         setIsSubmitted(true);
         setUploadedFiles([]);
+        
         toast.success("Submission is successfull");
       } else {
         toast.error(response.data.message || "Submission failed.");
@@ -104,8 +125,9 @@ const AssignmentDetails = () => {
   }
 
   return (
-    <div className="w-full flex items-center justify-center bg-white">
-      <Card className="w-full max-w-4xl h-[85vh] shadow-xl border rounded-2xl bg-gray-50 overflow-hidden relative flex flex-col">
+    <div className="w-full  flex items-center justify-center bg-white px-4 sm:px-2 overflow-auto mt-6">
+      <Card className="w-full max-w-4xl  border-none rounded-2xl bg-white overflow-hidden relative flex flex-col">
+        {/* Close Button */}
         <button
           onClick={() => navigate(-1)}
           className="absolute top-4 right-4 flex items-center gap-2 text-gray-700 hover:text-blue-600 transition"
@@ -113,9 +135,11 @@ const AssignmentDetails = () => {
           <XIcon className="w-6 h-6" />
         </button>
 
-        <CardContent className="p-8 h-full flex flex-col">
+        {/* Content */}
+        <CardContent className="p-4 sm:p-8 flex flex-col overflow-auto">
+          {/* Assignment Details */}
           <div className="flex-grow">
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
               {assignment.title}
             </h1>
             <p className="text-gray-600 mt-2">{assignment.description}</p>
@@ -126,18 +150,18 @@ const AssignmentDetails = () => {
 
             {/* Provided Materials */}
             {assignment.attachments?.length > 0 && (
-              <div className="mt-5">
+              <div className="mt-4 sm:mt-5">
                 <h2 className="font-semibold text-gray-700">Materials:</h2>
-                <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
                   {assignment.attachments.map((material, index) => (
                     <Card
                       key={index}
-                      className="p-4 border shadow-sm flex items-center gap-3"
+                      className="p-3 sm:p-4 border shadow-sm flex items-center gap-3"
                     >
                       {material.toLowerCase().endsWith(".pdf") ? (
-                        <File className="w-8 h-8 text-red-500" />
+                        <File className="w-6 sm:w-8 h-6 sm:h-8 text-red-500" />
                       ) : (
-                        <FileText className="w-5 h-5 text-blue-500" />
+                        <FileText className="w-5 sm:w-6 h-5 sm:h-6 text-blue-500" />
                       )}
                       <a
                         href={material}
@@ -155,11 +179,11 @@ const AssignmentDetails = () => {
           </div>
 
           {/* Upload & Comment Section */}
-          <div className="grid grid-cols-2 gap-6 mt-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-6">
             {/* Upload Assignment Section */}
-            <div className="bg-gray-50 p-5 rounded-lg border flex flex-col">
+            <div className="bg-white p-4 sm:p-5 rounded-lg border flex flex-col">
               <label className="block text-gray-700 font-medium">
-                Upload Assignment:
+                Upload :
               </label>
               <div className="mt-2 flex items-center gap-3">
                 <input
@@ -172,9 +196,9 @@ const AssignmentDetails = () => {
                 {!isSubmitted && (
                   <label
                     htmlFor="file-upload"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer flex items-center gap-2 hover:bg-blue-600"
+                    className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer flex items-center gap-2 hover:bg-blue-600 text-sm sm:text-base"
                   >
-                    <Upload className="w-5 h-5" />
+                    <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
                     Upload Files
                   </label>
                 )}
@@ -182,19 +206,18 @@ const AssignmentDetails = () => {
 
               {/* Show uploaded files */}
               {uploadedFiles.length > 0 && (
-                <ul className="mt-3 space-y-2 flex-grow overflow-auto max-h-32">
+                <ul className="mt-3 space-y-2 flex-grow overflow-auto max-h-28 sm:max-h-32">
                   {uploadedFiles.map((file, index) => (
                     <li
                       key={index}
                       className="text-gray-600 flex items-center gap-2"
                     >
                       {file.type === "application/pdf" ? (
-                        <File className="w-6 h-6 text-red-500" />
+                        <File className="w-5 sm:w-6 h-5 sm:h-6 text-red-500" />
                       ) : (
-                        <FileText className="w-5 h-5 text-gray-500" />
+                        <FileText className="w-4 sm:w-5 h-4 sm:h-5 text-gray-500" />
                       )}
                       {file.name || file.split("/").pop()}
-
                     </li>
                   ))}
                 </ul>
@@ -202,7 +225,7 @@ const AssignmentDetails = () => {
 
               {!isSubmitted && (
                 <Button
-                  className="mt-4 w-full bg-green-500 hover:bg-green-600 text-lg py-2"
+                  className="mt-4 w-full bg-green-500 hover:bg-green-600 text-sm sm:text-lg py-2"
                   onClick={handleSubmit}
                 >
                   Hand In Assignment
@@ -211,33 +234,56 @@ const AssignmentDetails = () => {
 
               {isSubmitted && (
                 <div className="mt-4 bg-green-100 p-3 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
-                  <span className="text-green-700 font-semibold">
+                  <CheckCircle className="w-5 sm:w-6 h-5 sm:h-6 text-green-600 mr-2" />
+                  
+                  {grade ? <span className="text-green-700 font-semibold text-sm sm:text-base">
+                    Teacher Checked!
+                  </span> : <span className="text-green-700 font-semibold text-sm sm:text-base">
                     Submitted Successfully!
-                  </span>
+                  </span>}
                 </div>
               )}
             </div>
 
-            {/* Comment Section */}
-            <div className="bg-gray-50 p-5 rounded-lg border flex flex-col">
+            {/* Comment Section (NO TEXTAREA) */}
+            <div className="bg-white p-4 sm:p-5 rounded-lg border-none flex flex-col">
               <label className="block text-gray-700 font-medium">
                 Leave a Comment:
               </label>
-              <Textarea
-                className="mt-2 w-full p-3 border rounded-lg text-gray-700 flex-grow"
-                rows="3"
-                placeholder="Ask a question or leave a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-              <Button
-                className="mt-3 w-full bg-gray-700 hover:bg-gray-800 text-white"
-                disabled={!comment.trim()}
-              >
-                Submit Comment
-              </Button>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="text"
+                  className="w-full p-3 border rounded-lg text-gray-700 text-sm sm:text-base"
+                  placeholder="Ask a question or leave a comment..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+                <Button
+                  className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 text-sm sm:text-base"
+                  disabled={!comment.trim()}
+                >
+                  Send
+                </Button>
+              </div>
             </div>
+            {isSubmitted && (grade || feedback) && (
+              <div className="bg-white p-4 sm:p-5 rounded-lg border mt-6 ">
+                
+                <div className="mt-2">
+                  {grade && (
+                    <p className="text-gray-700">
+                      <strong>Grade:</strong>{" "}
+                      <span className="text-green-600">{grade}</span>
+                    </p>
+                  )}
+                  {feedback && (
+                    <p className="text-gray-700 mt-1">
+                      <strong>Teacher Feedback:</strong> {feedback}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

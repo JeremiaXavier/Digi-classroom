@@ -432,7 +432,7 @@ const TeacherClassroomDetails = () => {
         );
 
         // Update Zustand store to persist changes globally
-        removeAssignment(assignmentId);
+        
       }
     } catch (error) {
       console.error("Error deleting assignment:", error);
