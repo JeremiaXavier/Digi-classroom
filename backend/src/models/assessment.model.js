@@ -19,6 +19,10 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  imageUrl: {
+    type: String, // Stores optional image URL for questions
+    default: null,
+  },
   choices: {
     type: [choiceSchema], // Stores MCQ choices
     default: undefined,
@@ -37,13 +41,21 @@ const questionSchema = new mongoose.Schema({
     type: Number,
     default: 1, // Default marks per question
   },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // ✅ Linked category
 });
 
 const assessmentSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  assignedClassrooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Classroom" }], // Links assessments to classrooms
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  assignedClassrooms: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Classroom" },
+  ], // Links assessments to classrooms
   questions: { type: [questionSchema], required: true },
+  timeLimit: { type: Number, required: true }, // 🔹 Time limit in minutes
   createdAt: { type: Date, default: Date.now },
 });
 

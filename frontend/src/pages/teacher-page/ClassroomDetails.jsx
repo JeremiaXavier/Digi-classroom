@@ -252,6 +252,7 @@ const TeacherClassroomDetails = () => {
       toast.success("Teacher added successfully");
       setTeachers([...teachers, response.data]);
       setNewTeacher("");
+      fetchClassroomDetails();
     } catch (error) {
       console.error("Error adding teacher:");
       toast.error(error.message);
@@ -726,7 +727,7 @@ const TeacherClassroomDetails = () => {
             </div>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
-              <div className="hidden sm:flex justify-end ">
+              <div className=" sm:flex justify-end ">
                 <button
                   className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
                   onClick={() => {

@@ -8,12 +8,11 @@ import ExamWarningModal from "@/components/assessment/ExamwarningModel.jsx";
 
 const ExaminationPage = () => {
   const { id } = useParams();
-  const { authUser } = useAuthStore();
+  const { authUser, idToken } = useAuthStore();
   const [assessment, setAssessment] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes timer
   const [answers, setAnswers] = useState({});
-  const { idToken } = useAuthStore();
   const [isMalpracticeDetected, setIsMalpracticeDetected] = useState(false);
   const [isExamStarted, setIsExamStarted] = useState(false);
   const navigate = useNavigate();
@@ -34,17 +33,15 @@ const ExaminationPage = () => {
     };
 
     fetchAssessment();
-  }, [id]);
+  }, [id, idToken]);
 
   const enterFullscreen = () => {
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen();
       setIsFullscreen(true);
     }
-
   };
 
-  
   useEffect(() => {
     if (authUser.role == "student") {
       const handleFocusLoss = () => {
@@ -99,21 +96,37 @@ const ExaminationPage = () => {
     enterFullscreen();
     setIsExamStarted(true);
   };
-  
+
   useEffect(() => {
     if (timeLeft <= 0) return;
     const timer = setInterval(() => setTimeLeft(timeLeft - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const handleAnswerSelect = (questionId, choice) => {
-    setAnswers({ ...answers, [questionId]: choice });
+  const handleAnswerSelect = (questionId, value, type, isMultiple = false) => {
+    setAnswers((prev) => {
+      const current = prev[questionId] || (isMultiple ? [] : "");
+      if (type === "mcq") {
+        return isMultiple
+          ? {
+              ...prev,
+              [questionId]: current.includes(value)
+                ? current.filter((choice) => choice !== value)
+                : [...current, value],
+            }
+          : { ...prev, [questionId]: value };
+      }
+      if (type === "paragraph") {
+        return { ...prev, [questionId]: value };
+      }
+    });
   };
 
-  if (!assessment) return <p>Loading...</p>;
+  if (!assessment || !assessment.questions || assessment.questions.length === 0)
+    return <p>Loading...</p>;
 
   const question = assessment.questions[currentQuestion];
-
+  console.log(answers);
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -144,11 +157,11 @@ const ExaminationPage = () => {
 
       {/* Main Exam Content */}
       <div className="flex flex-1">
-        {/* Left Column */}
-        <div className="w-1/2 p-6 border-r">
+        {/* Left Column - Paragraph or Question */}
+        <div className="w-1/3 p-6 border-r bg-gray-100">
           {question.type === "mcq" && question.paragraph && (
-            <div className="bg-white p-4 rounded">
-              <h2 className="font-bold text-lg">📖 Read the Paragraph</h2>
+            <div className="p-4 bg-white rounded shadow">
+              <h2 className="font-bold">📖 Read the Paragraph</h2>
               <p>{question.paragraph}</p>
             </div>
           )}
@@ -158,37 +171,73 @@ const ExaminationPage = () => {
         </div>
 
         {/* Right Column */}
-        <div className="w-1/2 p-6">
+        <div className="w-1/3 p-6">
           {question.type === "mcq" ? (
             <div>
               <h2 className="text-2xl font-semibold">{question.question}</h2>
-              <div className="mt-4">
-                {question.choices.map((choice, index) => (
-                  <label
-                    key={index}
-                    className="block bg-white p-3 rounded cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="mcq"
-                      value={choice.text}
-                      onChange={() =>
-                        handleAnswerSelect(question._id, choice.text)
-                      }
-                      className="mr-2"
-                    />
-                    {choice.text}
-                  </label>
-                ))}
+              <div className="mt-4 space-y-2">
+                {question.type === "mcq" &&
+                  question.choices?.map((choice, index) => (
+                    <label
+                      key={index}
+                      className="block p-3 bg-white rounded shadow cursor-pointerr"
+                    >
+                      <input
+                        type={question.isMultiple ? "checkbox" : "radio"}
+                        name={`question_${question._id}`}
+                        value={choice._id}
+                        checked={
+                          question.isMultiple
+                            ? answers[question._id]?.includes(choice._id) ??
+                              false
+                            : answers[question._id] === choice._id
+                        }
+                        onChange={() =>
+                          handleAnswerSelect(
+                            question._id,
+                            choice._id,
+                            "mcq",
+                            question.isMultiple
+                          )
+                        }
+                        className="mr-2"
+                      />
+                      {choice.text}
+                    </label>
+                  ))}
               </div>
             </div>
           ) : (
             <textarea
               className="w-full h-40 p-3 border rounded"
               placeholder="Type your answer here..."
-              onChange={(e) => handleAnswerSelect(question._id, e.target.value)}
+              onChange={(e) =>
+                handleAnswerSelect(question._id, e.target.value, "paragraph")
+              }
             />
           )}
+        </div>
+        {/* Right Column - Navigation Panel */}
+        <div className="w-1/3 p-6 border-l bg-gray-100">
+          <h2 className="text-lg font-semibold">Question Navigation</h2>
+          <div className="grid grid-cols-5 gap-2 mt-4">
+            {assessment.questions.map((q, index) => (
+              <button
+                key={index}
+                className={`w-12 h-12 rounded text-white font-bold ${
+                  currentQuestion === index
+                    ? "bg-blue-500"
+                    : answers[q._id]
+                    ? "bg-green-500"
+                    : "bg-gray-400"
+                }`}
+                disabled={!answers[q._id] && index > currentQuestion}
+                onClick={() => setCurrentQuestion(index)}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -211,9 +260,7 @@ const ExaminationPage = () => {
             }
           }}
         >
-          {currentQuestion < assessment.questions.length - 1
-            ? "Next"
-            : "Submit"}
+          {currentQuestion < assessment.questions.length - 1 ? "Next" : "End"}
         </button>
       </footer>
     </div>

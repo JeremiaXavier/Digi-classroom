@@ -109,7 +109,7 @@ export const StudentGetClassrooms = async (req, res) => {
         select: "name description createdBy",
         populate: {
           path: "createdBy",
-          select: "fullName",
+          select: "fullName photoURL", // Include photoURL
         },
       })
       .lean(); // Convert Mongoose documents to plain objects
@@ -123,6 +123,7 @@ export const StudentGetClassrooms = async (req, res) => {
           name: member.classroomId.name,
           description: member.classroomId.description,
           createdBy: member.classroomId.createdBy?.fullName || "Unknown",
+          creatorPhoto:member.classroomId.createdBy?.photoURL || "",
           role: member.role,
         };
       })
@@ -140,11 +141,9 @@ export const getClassroomMaterials = async (req, res) => {
   try {
     const { id } = req.params; // Extract classroom ID from URL params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res
-        .status(400)
-        .json({
-          message: "Invalid classroom ID from classroom Details get function",
-        });
+      return res.status(400).json({
+        message: "Invalid classroom ID from classroom Details get function",
+      });
     }
     // Fetch materials from the database for the given classroom
     const materials = await ClassroomMaterial.find({ classroomId: id })
@@ -161,12 +160,10 @@ export const getClassroomMaterials = async (req, res) => {
     res.status(200).json({ materials });
   } catch (error) {
     console.error("Error fetching classroom materials:", error.message);
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch materials in getClassroomMaterials",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch materials in getClassroomMaterials",
+      error: error.message,
+    });
   }
 };
 
@@ -456,12 +453,10 @@ export const addTeacher = async (req, res) => {
     const teacher = await User.findOne({ email });
 
     if (!teacher || teacher.role != "teacher") {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Teacher not found. Please ask them to sign up as teacher first.",
-        });
+      return res.status(404).json({
+        message:
+          "Teacher not found. Please ask them to sign up as teacher first.",
+      });
     }
 
     // Check if the teacher is already added to the classroom

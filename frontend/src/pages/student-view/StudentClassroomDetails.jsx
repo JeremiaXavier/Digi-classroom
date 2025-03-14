@@ -46,8 +46,8 @@ const StudentClassroomDetails = () => {
   const { id } = useParams();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
- const [assignments, setAssignments] = useState([]);
- const [members, setMembers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [members, setMembers] = useState([]);
   const [view, setView] = useState("materials");
 
   const { idToken } = useAuthStore();
@@ -78,8 +78,7 @@ const StudentClassroomDetails = () => {
           results[2].status === "fulfilled" ? results[2].value : null;
 
         // Set state only if data is available
-        if (assignmentsRes)
-          setAssignments(assignmentsRes.data.assignments);
+        if (assignmentsRes) setAssignments(assignmentsRes.data.assignments);
         if (memberRes) setMembers(memberRes.data.allMembers);
         if (materialRes) setMaterials(materialRes.data.materials);
 
@@ -104,24 +103,27 @@ const StudentClassroomDetails = () => {
 
     fetchClassroomDetails();
   }, [id, idToken]);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [previewType, setPreviewType] = useState("");
 
-  const openPreview = (fileUrl, fileExtension) => {
-    if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(fileExtension)) {
-      setPreviewType("image");
-    } else if (["mp4", "webm", "ogg"].includes(fileExtension)) {
-      setPreviewType("video");
-    } else if (fileExtension === "pdf") {
-      setPreviewType("pdf");
-    } else if (["doc", "docx", "xls", "xlsx"].includes(fileExtension)) {
-      setPreviewType("document");
-    } else {
-      alert("Preview not available for this file type.");
-      return;
+  const handleDownload = async (fileUrl, filename) => {
+    try {
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error("Failed to download file");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
     }
-    setPreviewUrl(fileUrl);
   };
+
   return (
     <div className="px-6 bg-white h-[95%] space-y-6 overflow-auto">
       {/* Navigation Tabs - Responsive */}
@@ -154,12 +156,12 @@ const StudentClassroomDetails = () => {
               No materials uploaded yet.
             </p>
           ) : (
-            <div className="flex flex-1 w-full flex-col gap-3">
-              <div className="grid gap-4 grid-cols-1 w-full">
+            <div className="flex flex-1 w-full  flex-wrap justify-center gap-3 mb-4">
+              <div className="grid gap-4 grid-cols-1 w-full lg:w-3/5">
                 {materials.map((material) => (
                   <Card
                     key={material._id}
-                    className="shadow-md border rounded-lg cursor-pointer hover:shadow-lg transition p-4 w-full"
+                    className=" border-b  cursor-pointer hover:shadow-lg transition p-4 w-full"
                   >
                     <CardHeader className="flex justify-center items-center md:items-start">
                       <CardTitle className="truncate">
@@ -192,43 +194,29 @@ const StudentClassroomDetails = () => {
                               ].includes(fileExtension);
 
                               return (
-                                <div
-                                  key={index}
-                                  className="flex items-center gap-3 border p-2 rounded-lg hover:bg-gray-50 transition"
-                                >
-                                  {getFileIcon(fileExtension)}
-                                  <span className="flex-1 truncate">
-                                    {filename}
-                                  </span>
+                                <a href={fileUrl} key={index} target="_blank">
+                                  <div
+                                    key={index}
+                                    className="flex items-center gap-3 border p-2 rounded-lg hover:bg-gray-50 transition"
+                                  >
+                                    {getFileIcon(fileExtension)}
 
-                                  {/* Preview Button */}
-                                  {isPreviewable && (
+                                    <span className="flex-1 truncate">
+                                      {filename}
+                                    </span>
                                     <Button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        openPreview(fileUrl, fileExtension);
+                                        handleDownload(fileUrl, filename);
                                       }}
                                       variant="outline"
                                       size="icon"
-                                      className="text-green-600 hover:bg-green-100"
+                                      className="text-blue-600 hover:bg-blue-100"
                                     >
-                                      <Eye />
+                                      <Download />
                                     </Button>
-                                  )}
-
-                                  {/* Download Button */}
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDownload(fileUrl, filename);
-                                    }}
-                                    variant="outline"
-                                    size="icon"
-                                    className="text-blue-600 hover:bg-blue-100"
-                                  >
-                                    <Download />
-                                  </Button>
-                                </div>
+                                  </div>
+                                </a>
                               );
                             })}
                           </div>
@@ -258,7 +246,7 @@ const StudentClassroomDetails = () => {
         {/* Assignments Section */}
         {view === "assignments" &&
           (loading ? (
-            <div className="flex items-center justify-center h-screen">
+            <div className="flex items-center flex-wrap  justify-center h-screen">
               <Loader className="size-10 animate-spin" />
             </div>
           ) : assignments.length === 0 ? (
@@ -266,9 +254,8 @@ const StudentClassroomDetails = () => {
               No assignments uploaded yet.
             </p>
           ) : (
-            <div className="flex flex-1 w-full flex-col gap-3">
-              <div className="grid gap-4 grid-cols-1 w-full">
-              
+            <div className="flex flex-1 w-full justify-center  gap-3">
+              <div className="grid gap-4  w-full lg:w-3/5">
                 {assignments.map((assignment) => (
                   <Card
                     key={assignment._id}
@@ -380,9 +367,9 @@ const StudentClassroomDetails = () => {
           ) : members.length === 0 ? (
             <p className="text-gray-500 text-center">No members.</p>
           ) : (
-            <div className="flex gap-2 flex-col">
+            <div className="flex gap-2 flex flex-wrap w-full">
               {members.map((member) => (
-                <Card key={member._id} className="shadow-md border rounded-lg">
+                <Card key={member._id} className="shadow-md border rounded-lg w-full lg:w-1/5">
                   <CardContent className="flex flex-row items-center gap-2 p-4">
                     <img
                       src={member.photoURL || "/default-avatar.png"}
@@ -391,6 +378,7 @@ const StudentClassroomDetails = () => {
                     />
                     <p className="text-lg text-gray-500">
                       {member.fullName || "Unknown"}
+                      
                     </p>
                   </CardContent>
                 </Card>

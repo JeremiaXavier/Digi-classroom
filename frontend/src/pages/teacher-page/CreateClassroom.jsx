@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { auth } from "@/lib/firebase";
 import { useAuthStore } from "@/store/auth-slice";
 
-const CreateClassroom = ({ isOpen, onClose }) => {
+const CreateClassroom = ({ isOpen, onClose,set }) => {
   const [formData, setFormData] = useState({ name: "", description: "" });
   const {idToken} = useAuthStore();
   const handleChange = (e) => {
@@ -20,6 +20,9 @@ const CreateClassroom = ({ isOpen, onClose }) => {
           Authorization: `Bearer ${idToken}`, // Correct usage
         },
       });
+      setFormData({name: "", description: "" });
+      set(false);
+      
       toast.success("New classroom is created");
     } catch (error) {
       toast.error("Error creating classroom:", error);

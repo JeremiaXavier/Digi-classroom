@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { axiosInstance } from "@/lib/axios";
 import { useAuthStore } from "@/store/auth-slice";
@@ -7,12 +7,36 @@ import Switcher from "@/components/assessment/Switcher";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CreateAssessment = () => {
   const [isChecked, setIsChecked] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
 
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([
-    { type: "mcq", paragraph: "", question: "", choices: ["", ""], answer: "" },
+    {
+      type: "mcq",
+      paragraph: "",
+      question: "",
+      choices: [
+        { text: "", isCorrect: false },
+        { text: "", isCorrect: false },
+      ],
+      answer: "",
+      isMultiple: false,
+      category: "",
+      imageUrl: "", // ✅ Store uploaded image URL
+    },
   ]);
   const { idToken } = useAuthStore();
   const [title, setTitle] = useState("");
@@ -21,7 +45,14 @@ const CreateAssessment = () => {
     setQuestions([
       ...questions,
       type === "paragraph"
-        ? { type: "paragraph", paragraph: "", question: "", answer: "" }
+        ? {
+            type: "paragraph",
+            paragraph: "",
+            question: "",
+            answer: "",
+            category: "",
+            imageUrl: "",
+          }
         : {
             type: "mcq",
             paragraph: "",
@@ -32,10 +63,55 @@ const CreateAssessment = () => {
             ],
             answer: "",
             isMultiple: false,
+            category: "",
+            imageUrl: "",
           },
     ]);
   };
 
+  const handleImageUpload = async (e, qIndex) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file); // 🔹 Must match multer field name in backend
+
+    try {
+      const response = await axiosInstance.post(
+        "/assess/upload/image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      const updatedQuestions = [...questions];
+      updatedQuestions[qIndex].imageUrl = response.data.imageUrl; // 🔹 Matches fixed backend response
+      setQuestions(updatedQuestions);
+
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      toast.error("Failed to upload image.");
+    }
+  };
+  const fetchCategories = async () => {
+    try {
+      const response = await axiosInstance.get(`/assess/get-category`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      setCategories(response.data);
+    } catch (error) {
+      toast.error("Failed to load categories");
+    }
+  };
+  useEffect(() => {
+    fetchCategories();
+  }, [idToken]);
   // Update question text
   const handleQuestionChange = (index, value) => {
     const updatedQuestions = [...questions];
@@ -64,23 +140,25 @@ const CreateAssessment = () => {
 
   // Set correct answer from radio selection
   const handleChoiceAnswerChange = (qIndex, cIndex) => {
-    const updatedQuestions = [...questions];
+    setQuestions((prevQuestions) => {
+      return prevQuestions.map((question, index) => {
+        if (index !== qIndex) return question; // Keep other questions unchanged
 
-    if (updatedQuestions[qIndex].isMultiple) {
-      // ✅ Allow multiple answers (toggle checkbox)
-      updatedQuestions[qIndex].choices[cIndex].isCorrect =
-        !updatedQuestions[qIndex].choices[cIndex].isCorrect;
-    } else {
-      // ✅ Only allow one correct answer (radio button behavior)
-      updatedQuestions[qIndex].choices = updatedQuestions[qIndex].choices.map(
-        (choice, index) => ({
-          ...choice,
-          isCorrect: index === cIndex, // Set only the selected choice to true
-        })
-      );
-    }
+        let updatedChoices = question.choices.map((choice, i) => {
+          if (question.isMultiple) {
+            // ✅ Toggle isCorrect for multiple-choice questions
+            return i === cIndex
+              ? { ...choice, isCorrect: !choice.isCorrect }
+              : choice;
+          } else {
+            // ✅ Only one answer should be correct (radio behavior)
+            return { ...choice, isCorrect: i === cIndex };
+          }
+        });
 
-    setQuestions(updatedQuestions);
+        return { ...question, choices: updatedChoices };
+      });
+    });
   };
 
   const handleAnswerChange = (qIndex, value) => {
@@ -95,13 +173,50 @@ const CreateAssessment = () => {
     updatedQuestions[index].choices.push({ text: "", isCorrect: false });
     setQuestions(updatedQuestions);
   };
+  // Handle category change
+
+  const handleCategoryChange = (qIndex, value) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[qIndex].category = value;
+    setQuestions(updatedQuestions);
+  };
+  const handleAddNewCategory = async () => {
+    if (!newCategory.trim()) {
+      toast.error("Category name cannot be empty!");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(
+        "/assess/add-category",
+        { name: newCategory },
+        {
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+
+      const addedCategory = response.data; // Expecting `{ _id, name }`
+
+      setCategories((prev) => [...prev, addedCategory]);
+      if (selectedQuestionIndex !== null ) {
+        handleCategoryChange(selectedQuestionIndex, addedCategory._id);
+      }
+      fetchCategories();
+      setShowNewCategoryInput(false);
+      setNewCategory("");
+      setSelectedQuestionIndex("");
+      toast.success("Category added successfully!");
+    } catch (error) {
+      toast.error("Failed to add category.");
+    }
+  };
 
   // Handle form submission
   const handleSubmit = async () => {
     try {
       const response = await axiosInstance.post(
         "/assess/create",
-        { title, questions },
+        { title, timeLimit, questions },
         {
           headers: { Authorization: `Bearer ${idToken}` },
         }
@@ -129,6 +244,17 @@ const CreateAssessment = () => {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter assessment name"
           />
+          {/* Time Limit */}
+          <label className="block mt-4 text-xl font-semibold">
+            Time Limit (Minutes)
+          </label>
+          <Input
+            type="number"
+            value={timeLimit}
+            onChange={(e) => setTimeLimit(Number(e.target.value))}
+            min="1"
+          />
+
           {questions.map((q, qIndex) => (
             <div
               key={qIndex}
@@ -138,6 +264,60 @@ const CreateAssessment = () => {
               <h2 className="text-lg font-semibold mb-2">
                 Question {qIndex + 1}
               </h2>
+              {/* Category Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Category
+                </label>
+
+                {showNewCategoryInput ? (
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Enter new category name"
+                    />
+                    <Button
+                      onClick={handleAddNewCategory}
+                      className="bg-blue-600"
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      onClick={() => setShowNewCategoryInput(false)}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Select
+                    value={q.category} // ✅ Each question maintains its own category
+                    onValueChange={(value) => {
+                      if (value === "add-new") {
+                        setSelectedQuestionIndex(qIndex); 
+                        setShowNewCategoryInput(true);
+                      } else {
+                        handleCategoryChange(qIndex, value); // ✅ Update only the specific question
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="mt-1 w-full">
+                      <SelectValue placeholder="Select or search a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category._id} value={category._id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="add-new" className="text-blue-500">
+                        ➕ Add New Category
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
 
               {/* Optional Paragraph Input */}
               {q.type === "mcq" && (
@@ -186,7 +366,6 @@ const CreateAssessment = () => {
                       }}
                     />
                     {/* ✅ Use Switcher */}
-                    
                   </div>
                   <label className="block mt-3">Choices</label>
                   {q.choices.map((choice, cIndex) => (
@@ -213,7 +392,7 @@ const CreateAssessment = () => {
                   ))}
                   <Button
                     onClick={() => addChoice(qIndex)}
-                    className="mt-2 bg-blue-600"
+                    className="mt-2 text-blue-600 bg-white text-sm"
                   >
                     ➕ Add Choice
                   </Button>
@@ -234,9 +413,25 @@ const CreateAssessment = () => {
                   />
                 </>
               )}
+              <button
+                onClick={() =>
+                  document.getElementById(`imageUpload-${qIndex}`).click()
+                }
+                className="mt-2 mx-2 text-blue-600 text-sm"
+              >
+                ➕ Add Image
+              </button>
+
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                id={`imageUpload-${qIndex}`}
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, qIndex)}
+                className="hidden"
+              />
             </div>
           ))}
-
           {/* Buttons to Add Questions */}
           <div className="flex gap-4 mt-6">
             <Button onClick={() => addQuestion("mcq")} className="bg-blue-600">
@@ -249,7 +444,6 @@ const CreateAssessment = () => {
               ➕ Add Paragraph Question
             </Button>
           </div>
-
           {/* Submit Button */}
           <div className="mt-6 text-center">
             <Button

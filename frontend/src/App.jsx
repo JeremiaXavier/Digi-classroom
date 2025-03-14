@@ -31,6 +31,8 @@ import StudentAssessments from "./pages/assessment/Student/ViewAssessments.jsx";
 import ExaminationPage from "./pages/assessment/Student/Examination/ExaminationLayout.jsx";
 import AssignmentDetails from "./pages/student-view/StudentAssignments.jsx";
 import AssignmentDetailsTeacher from "./pages/teacher-page/AssignmentDetails.jsx";
+import Evaluate from "./pages/assessment/Evaluate.jsx";
+import EvaluateStudent from "./pages/assessment/EvaluateStudent.jsx";
 
 function App() {
   const { authUser, isAuthenticated, set } = useAuthStore();
@@ -88,6 +90,8 @@ function App() {
           <Route path="" element={<LandingPage />} />
           <Route path="create" element={<CreateAssessment />} />
           <Route path="view" element={<TeacherAssessmentsPage />} />
+          <Route path="evaluate" element={<Evaluate />} />
+          <Route path="evaluate/:userId/:testId" element={<EvaluateStudent />} />
         </Route>
         <Route path="assessment/s" element={<StudentExamSecurityLayout />}>
           <Route path="" element={<LandingPage />} />

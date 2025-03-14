@@ -51,8 +51,7 @@ const StudentExamSecurityLayout = () => {
     }else{
         navigate("/");
     } */
-    
-  }, [navigate]); 
+  }, [navigate]);
 
   // Hide cursor after inactivity
   useEffect(() => {
@@ -73,80 +72,75 @@ const StudentExamSecurityLayout = () => {
     };
   }, []);
 
-
-  
-
   const handleCloseModal = () => {
     setIsMalpracticeDetected(false);
     navigate("/student/dashboard");
   };
   return (
     <div className="w-full h-screen flex bg-gray-100">
-      
-        <>
-          <MalpracticeWarning
-            isOpen={isMalpracticeDetected}
-            onClose={handleCloseModal}
+      {/* Sidebar */}
+      <aside className="w-1/5 h-full bg-white/80 backdrop-blur-md shadow-md border-r border-gray-200 flex flex-col p-6">
+        {/* User Profile */}
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 shadow-sm rounded-lg">
+          <img
+            src={authUser.photoURL || "/default-avatar.png"}
+            alt="User Avatar"
+            className="w-14 h-14 rounded-full border-2 border-gray-400"
           />
-
-          {/* Sidebar */}
-          <div className="w-1/5 h-full  text-gray-800 flex flex-col p-4 bg-gray-50">
-            {/* User Profile */}
-
-            <div className="flex items-center space-x-3 p-4 border-b border-gray-600">
-              <img
-                src={authUser.photoURL || "/default-avatar.png"}
-                alt="User Avatar"
-                className="w-12 h-12 rounded-full border border-gray-400"
-              />
-              <div>
-                <h1 className="text-lg font-semibold">{authUser.fullName}</h1>
-                <p className="text-sm text-gray-700">{authUser.email}</p>
-                <span className="text-xs font-medium text-gray-500 capitalize">
-                  {authUser.role}
-                </span>
-              </div>
-            </div>
-
-            {/* Navigation Links */}
-            <nav className="flex flex-col mt-4 gap-2 space-y-2 bg-gray-50 border border-gray-100">
-              
-              
-              <button
-                onClick={() => navigate("/assessment/s/view")}
-                className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
-              >
-                ✏️ Your Assessments
-              </button>
-              <button
-                onClick={() => navigate("/assessment/scoreboard")}
-                className="py-5 px-4 rounded bg-gray-100 hover:bg-gray-200"
-              >
-                📊 Your Performance
-              </button>
-              
-            </nav>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-800">
+              {authUser.fullName}
+            </h1>
+            <p className="text-sm text-gray-600">{authUser.email}</p>
+            <span className="text-xs font-medium text-gray-500 capitalize">
+              {authUser.role}
+            </span>
           </div>
+        </div>
 
-          {/* Main Content Area */}
-          <div className="w-4/5 h-full overflow-auto bg-white p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold text-gray-700">
-                Digi-Classroom Online Examination Portal
-              </h1>
-              <button
-                onClick={() => navigate(-1)}
-                className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded"
-              >
-                ⬅ Back
-              </button>
-            </div>
+        {/* Navigation Links */}
+        <nav className="mt-6 space-y-3">
+          <button
+            onClick={() => navigate("/assessment/s/view")}
+            className="flex items-center py-3 px-4 rounded-lg bg-gray-100 hover:bg-gray-200 transition shadow-sm"
+          >
+            ✏️ <span className="ml-3">Your Assessments</span>
+          </button>
+          <button
+            onClick={() => navigate("/assessment/scoreboard")}
+            className="flex items-center py-3 px-4 rounded-lg bg-gray-100 hover:bg-gray-200 transition shadow-sm"
+          >
+            📊 <span className="ml-3">Your Performance</span>
+          </button>
+        </nav>
+      </aside>
 
-            {/* Dynamic Content */}
-            <Outlet />
-          </div>
-        </>
-      
+      {/* Main Content */}
+      <main className="w-4/5 h-full overflow-auto bg-gradient-to-br from-gray-50 to-white p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 tracking-wide flex items-center">
+            🚀 Digi-Classroom
+            <span className="text-blue-600 ml-2">Exam Portal</span>
+          </h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg transition shadow-md flex items-center"
+          >
+            ⬅ <span className="ml-2">Back</span>
+          </button>
+        </div>
+
+        {/* Dynamic Content */}
+        <section className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+          <Outlet />
+        </section>
+      </main>
+
+      {/* Malpractice Warning Modal */}
+      <MalpracticeWarning
+        isOpen={isMalpracticeDetected}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

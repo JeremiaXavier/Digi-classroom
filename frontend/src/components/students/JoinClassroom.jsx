@@ -47,7 +47,7 @@ export default function JoinClassroom() {
   };
   
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-white p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle className="text-center text-xl font-semibold">
@@ -65,7 +65,7 @@ export default function JoinClassroom() {
           <Button
             onClick={handleJoinClassroom}
             disabled={loading}
-            className="w-full"
+            className="w-full bg-[#f712eb]"
           >
             {loading ? "Joining..." : "Join"}
           </Button>

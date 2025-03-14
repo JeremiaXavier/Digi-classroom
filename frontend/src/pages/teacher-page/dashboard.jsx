@@ -164,7 +164,7 @@ const TeacherDashboard = () => {
 
         <div className="bg-white h-full rounded-lg p-4">
           <Outlet />
-          <CreateClassroom isOpen={isModalOpen} onClose={closeModal} />
+          <CreateClassroom isOpen={isModalOpen} onClose={closeModal} set ={setIsModalOpen}/>
         </div>
       </main>
     </div>

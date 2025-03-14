@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "@/lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth-slice";
+import { Trash2 } from "lucide-react";
 
 const TeacherAssessmentsPage = () => {
   const navigate = useNavigate();
@@ -14,35 +15,35 @@ const TeacherAssessmentsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch assessments
-    const fetchAssessments = async () => {
-      try {
-        const response = await axiosInstance.get("/assess/view", {
-          headers: { Authorization: `Bearer ${idToken}` },
-        });
-        if (response.status === 200) {
-          setAssessments(response.data.assessment);
-        }
-      } catch (error) {
-        toast.error("Failed to fetch assessments.");
-      }
-    };
-
-    // Fetch classrooms
-    const fetchClassrooms = async () => {
-      try {
-        const response = await axiosInstance.get("/c/all", {
-          headers: { Authorization: `Bearer ${idToken}` },
-        });
-        setClassrooms(response.data);
-      } catch (error) {
-        toast.error("Failed to fetch classrooms.");
-      }
-    };
-
     fetchAssessments();
     fetchClassrooms();
   }, [idToken]);
+
+  // Fetch assessments
+  const fetchAssessments = async () => {
+    try {
+      const response = await axiosInstance.get("/assess/view", {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (response.status === 200) {
+        setAssessments(response.data.assessment);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch assessments.");
+    }
+  };
+
+  // Fetch classrooms
+  const fetchClassrooms = async () => {
+    try {
+      const response = await axiosInstance.get("/c/all", {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      setClassrooms(response.data);
+    } catch (error) {
+      toast.error("Failed to fetch classrooms.");
+    }
+  };
 
   // Open the modal and set the selected assessment
   const openModal = (assessmentId) => {
@@ -80,9 +81,50 @@ const TeacherAssessmentsPage = () => {
       );
 
       toast.success("Assessment assigned successfully!");
+      fetchAssessments();
       setIsModalOpen(false);
     } catch (error) {
       toast.error("Failed to assign assessment.");
+    }
+  };
+  const removeClassroomFromAssessment = async (assessmentId, classroomId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove this classroom from the assessment?"
+      )
+    )
+      return;
+
+    try {
+      await axiosInstance.post(
+        `/assess/remove/${assessmentId}/${classroomId}`, // Correct URL
+        {}, // Empty request body (since it's a POST request)
+        {
+          headers: { Authorization: `Bearer ${idToken}` }, // Correct placement of headers
+        }
+      );
+
+      toast.success("Classroom removed from assessment!");
+      fetchAssessments(); // Refresh assessments
+    } catch (error) {
+      toast.error("Failed to remove classroom from assessment.");
+    }
+  };
+
+  // Handle assessment deletion
+  const deleteAssessment = async (assessmentId) => {
+    if (!window.confirm("Are you sure you want to delete this assessment?"))
+      return;
+
+    try {
+      await axiosInstance.delete(`/assess/${assessmentId}/delete`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+
+      toast.success("Assessment deleted successfully!");
+      setAssessments(assessments.filter((a) => a._id !== assessmentId));
+    } catch (error) {
+      toast.error("Failed to delete assessment.");
     }
   };
 
@@ -95,10 +137,44 @@ const TeacherAssessmentsPage = () => {
           {assessments.map((assessment) => (
             <div
               key={assessment._id}
-              className="bg-white p-4 shadow-md rounded-lg"
+              className="bg-white p-4 shadow-md rounded-lg relative"
             >
+              {/* Delete Button */}
+              <button
+                onClick={() => deleteAssessment(assessment._id)}
+                className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-all"
+              >
+                <Trash2 size={18} />
+              </button>
+
               <h2 className="text-xl font-semibold">{assessment.title}</h2>
               <p className="text-gray-600">{assessment.description}</p>
+              {assessment.assignedClassrooms &&
+                assessment.assignedClassrooms.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    <strong>Assigned Classrooms:</strong>
+                    {assessment.assignedClassrooms.map((classroom) => (
+                      <div
+                        key={classroom._id}
+                        className="flex justify-between items-center bg-gray-100 p-2 rounded mt-1"
+                      >
+                        <span>{classroom.name}</span>
+                        <button
+                          onClick={() =>
+                            removeClassroomFromAssessment(
+                              assessment._id,
+                              classroom._id
+                            )
+                          }
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          ❌ Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               <div className="mt-3 flex space-x-2">
                 <button
                   onClick={() => navigate(`/assessment/${assessment._id}`)}
