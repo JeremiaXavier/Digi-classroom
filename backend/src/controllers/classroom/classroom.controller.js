@@ -1,6 +1,6 @@
+
 import Classroom from "../../models/classrooms.model.js";
 import ClassroomMaterial from "../../models/material.model.js";
-import cloudinary from "../../lib/cloudinary.js";
 import Member from "../../models/members.models.js";
 import Assignment from "../../models/assignment.model.js";
 import Subject from "../../models/subject.model.js";
@@ -42,58 +42,67 @@ export const createClassrooms = async (req, res) => {
 };
 
 export const getClassrooms = async (req, res) => {
-  const userId = req.user?._id; // Safely access userId from req.user
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized access" });
-  }
-
   try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
     if (req.user.role !== "teacher") {
       return res.status(403).json({ message: "Unauthorized access" });
     }
 
-    // Fetch created classrooms
-    const createdClassrooms = await Classroom.find({
-      createdBy: userId,
-    }).lean();
+    // Fetch classrooms created by the teacher
+    const createdClassrooms = await Classroom.find({ createdBy: userId })
+      .lean()
+      .populate({
+        path: "createdBy",
+        select: "fullName photoURL",
+      });
+
     const createdClassroomsWithRole = createdClassrooms.map((classroom) => ({
       ...classroom,
       role: "teacher",
-      createdBy: { name: "you" },
+      createdBy: { fullName: "You", photoURL: req.user.photoURL }, // Show "You" for self-created
     }));
 
-    // Fetch joined classrooms with populated data
+    // Fetch classrooms the teacher has joined
     const joinedClassrooms = await Member.find({ userId })
-      .populate("classroomId", "name description createdBy")
       .populate({
         path: "classroomId",
+        select: "name description createdBy",
         populate: {
           path: "createdBy",
-          select: "fullName", // Select only the name from the 'createdBy' user
+          select: "fullName photoURL",
         },
-      });
+      })
+      .lean();
 
-    const joinedClassroomsWithRole = joinedClassrooms.map((member) => ({
-      ...member.classroomId,
-      role: member.role,
-      createdBy: member.classroomId.createdBy?.name || null, // Use optional chaining
-    }));
+    // **Fix: Ensure classroomId exists before accessing properties**
+    const joinedClassroomsWithRole = joinedClassrooms
+      .filter((member) => member.classroomId) // Ignore invalid entries
+      .map((member) => ({
+        ...member.classroomId,
+        role: "member",
+        createdBy: {
+          fullName: member.classroomId.createdBy?.fullName || "Unknown",
+          photoURL: member.classroomId.createdBy?.photoURL || null,
+        },
+      }));
 
-    // Merge all classrooms into one array and remove duplicates by _id
-    const allClassrooms = [
-      ...joinedClassroomsWithRole,
-      ...createdClassroomsWithRole,
-    ];
+    // Merge both lists and remove duplicates
+    const allClassrooms = [...joinedClassroomsWithRole, ...createdClassroomsWithRole];
     const uniqueClassrooms = Array.from(
       new Map(allClassrooms.map((item) => [item._id.toString(), item])).values()
     );
 
     res.status(200).json(uniqueClassrooms);
   } catch (error) {
-    console.error("Error fetching classrooms with roles:", error);
+    console.error("Error fetching classrooms:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 export const StudentGetClassrooms = async (req, res) => {
   try {
@@ -123,7 +132,7 @@ export const StudentGetClassrooms = async (req, res) => {
           name: member.classroomId.name,
           description: member.classroomId.description,
           createdBy: member.classroomId.createdBy?.fullName || "Unknown",
-          creatorPhoto:member.classroomId.createdBy?.photoURL || "",
+          creatorPhoto: member.classroomId.createdBy?.photoURL || "",
           role: member.role,
         };
       })
@@ -388,15 +397,8 @@ export const deleteMaterials = async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
-export const deleteClassroom = async (req, res) => {
-  const { id } = req.params;
-  try {
-    await Classroom.findByIdAndDelete({ _id: id });
-    return res.status(200).json({ message: " deleted classroom successfuly" });
-  } catch (error) {
-    return res.status(400).json({ message: "cannot delete classroom", error });
-  }
-};
+
+
 
 export const JoinClassroom = async (req, res) => {
   try {

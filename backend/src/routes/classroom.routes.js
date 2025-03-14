@@ -1,7 +1,8 @@
 import express from "express"
 import { protectRoute } from "../middlewares/auth.middleware.js"
-import { createClassrooms, getClassrooms, uploadMaterials, getClassroomMaterials, getClassroomMembers, deleteClassroom, StudentGetClassrooms , JoinClassroom, getSubjects, addSubject, deleteMaterials, addTeacher, deleteMember } from "../controllers/classroom/classroom.controller.js"
+import { createClassrooms, getClassrooms, uploadMaterials, getClassroomMaterials, getClassroomMembers, StudentGetClassrooms , JoinClassroom, getSubjects, addSubject, deleteMaterials, addTeacher, deleteMember } from "../controllers/classroom/classroom.controller.js"
 import multer from "multer"
+import { deleteClassroom } from "../controllers/deletionControllers/deletion.controller.js"
 const classroomRouter = express.Router()
 const storage = multer.memoryStorage();
 const upload = multer({ storage }); 

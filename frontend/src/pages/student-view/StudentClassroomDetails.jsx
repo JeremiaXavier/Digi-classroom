@@ -254,8 +254,8 @@ const StudentClassroomDetails = () => {
               No assignments uploaded yet.
             </p>
           ) : (
-            <div className="flex flex-1 w-full justify-center  gap-3">
-              <div className="grid gap-4  w-full lg:w-3/5">
+            <div className="flex flex-1 w-full  flex-wrap justify-center gap-3 mb-4">
+              <div className="grid gap-4 grid-cols-1 w-full lg:w-3/5">
                 {assignments.map((assignment) => (
                   <Card
                     key={assignment._id}
