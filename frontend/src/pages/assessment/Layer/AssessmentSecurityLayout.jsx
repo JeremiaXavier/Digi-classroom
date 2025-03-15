@@ -27,20 +27,12 @@ const ExamSecurityLayout = () => {
   }, [navigate]);
 
   const enterFullscreen = () => {
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen();
+    
       setIsFullscreen(true);
-    }
+    
   };
 
-  const handleMalpractice = () => {
-    setIsMalpracticeDetected(true);
-  };
 
-  const handleCloseModal = () => {
-    setIsMalpracticeDetected(false);
-    navigate("/student/dashboard");
-  };
 
   return (
     <div className="w-full h-screen flex bg-gray-50">
@@ -57,13 +49,13 @@ const ExamSecurityLayout = () => {
               You are about to enter a secure environment for the exam.
             </p>
             <Button onClick={enterFullscreen} className="w-full text-lg">
-              Enter Fullscreen
+              Enter 
             </Button>
           </div>
         </div>
       ) : (
         <>
-          <MalpracticeWarning isOpen={isMalpracticeDetected} onClose={handleCloseModal} />
+
 
           {/* Sidebar */}
           <aside className="w-72 bg-white shadow-lg border-r p-6 flex flex-col">

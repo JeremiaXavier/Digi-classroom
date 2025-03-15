@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Trash2 } from "lucide-react";
 
 const CreateAssessment = () => {
   const [isChecked, setIsChecked] = useState(false);
@@ -52,6 +53,7 @@ const CreateAssessment = () => {
             answer: "",
             category: "",
             imageUrl: "",
+            mark: 1,
           }
         : {
             type: "mcq",
@@ -65,6 +67,7 @@ const CreateAssessment = () => {
             isMultiple: false,
             category: "",
             imageUrl: "",
+            mark: 1,
           },
     ]);
   };
@@ -155,8 +158,9 @@ const CreateAssessment = () => {
             return { ...choice, isCorrect: i === cIndex };
           }
         });
-
-        return { ...question, choices: updatedChoices };
+        const correctCount = updatedChoices.filter((c) => c.isCorrect).length;
+        const marks = question.isMultiple ? correctCount : 1;
+        return { ...question, choices: updatedChoices, marks };
       });
     });
   };
@@ -198,7 +202,7 @@ const CreateAssessment = () => {
       const addedCategory = response.data; // Expecting `{ _id, name }`
 
       setCategories((prev) => [...prev, addedCategory]);
-      if (selectedQuestionIndex !== null ) {
+      if (selectedQuestionIndex !== null) {
         handleCategoryChange(selectedQuestionIndex, addedCategory._id);
       }
       fetchCategories();
@@ -209,6 +213,21 @@ const CreateAssessment = () => {
     } catch (error) {
       toast.error("Failed to add category.");
     }
+  };
+
+  const handleMarksChange = (qIndex, value) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[qIndex].marks = Number(value);
+    setQuestions(updatedQuestions);
+  };
+  const handleDiscardQuestion = (qIndex) => {
+    setQuestions((prevQuestions) => {
+      if (prevQuestions.length === 1) {
+        toast.error("At least one question is required!");
+        return prevQuestions; // Prevent deletion
+      }
+      return prevQuestions.filter((_, i) => i !== qIndex);
+    });
   };
 
   // Handle form submission
@@ -258,12 +277,18 @@ const CreateAssessment = () => {
           {questions.map((q, qIndex) => (
             <div
               key={qIndex}
-              className="mt-6 p-4 border rounded-lg bg-gray-100"
+              className=" relative mt-6 p-4 border rounded-lg bg-gray-100"
             >
               {/* Question Number */}
               <h2 className="text-lg font-semibold mb-2">
                 Question {qIndex + 1}
               </h2>
+              <button
+                onClick={() => handleDiscardQuestion(qIndex)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-red-600 transition"
+              >
+                <Trash2 size={18} />
+              </button>
               {/* Category Input */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">
@@ -295,7 +320,7 @@ const CreateAssessment = () => {
                     value={q.category} // ✅ Each question maintains its own category
                     onValueChange={(value) => {
                       if (value === "add-new") {
-                        setSelectedQuestionIndex(qIndex); 
+                        setSelectedQuestionIndex(qIndex);
                         setShowNewCategoryInput(true);
                       } else {
                         handleCategoryChange(qIndex, value); // ✅ Update only the specific question
@@ -410,6 +435,18 @@ const CreateAssessment = () => {
                     rows="4"
                     placeholder="Enter answer"
                     onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
+                  />
+
+                  {/* Marks Input */}
+                  <label className="block text-gray-700 font-medium mt-3">
+                    Marks:
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={q.marks || ""}
+                    onChange={(e) => handleMarksChange(qIndex, e.target.value)}
+                    placeholder="Enter marks for this question"
                   />
                 </>
               )}

@@ -21,7 +21,7 @@ const questionSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String, // Stores optional image URL for questions
-    default: null,
+    default: "",
   },
   choices: {
     type: [choiceSchema], // Stores MCQ choices

@@ -11,7 +11,9 @@ export const createAssessment = async (req, res) => {
     const { title, timeLimit, questions } = req.body; // ✅ Include `timeLimit`
 
     if (!title || !timeLimit) {
-      return res.status(400).json({ error: "Title and timeLimit are required." });
+      return res
+        .status(400)
+        .json({ error: "Title and timeLimit are required." });
     }
 
     const newAssessment = new Assessment({
@@ -30,10 +32,11 @@ export const createAssessment = async (req, res) => {
   }
 };
 
-
 export const getAssessments = async (req, res) => {
   try {
-    const assessment = await Assessment.find({ createdBy: req.user._id }).populate("assignedClassrooms", "name");;
+    const assessment = await Assessment.find({
+      createdBy: req.user._id,
+    }).populate("assignedClassrooms", "name");
     if (assessment.length > 0) {
       res.status(200).json({ message: "successfully fetched", assessment });
     }
@@ -74,12 +77,10 @@ export const assignAssessment = async (req, res) => {
     const { assessmentId, classroomIds } = req.body;
 
     if (!assessmentId || !classroomIds || classroomIds.length === 0) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Invalid data. Please provide an assessment ID and at least one classroom ID.",
-        });
+      return res.status(400).json({
+        message:
+          "Invalid data. Please provide an assessment ID and at least one classroom ID.",
+      });
     }
 
     // Update the assessment by adding multiple classrooms
@@ -93,12 +94,10 @@ export const assignAssessment = async (req, res) => {
       return res.status(404).json({ message: "Assessment not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Assessment assigned successfully!",
-        assessment: updatedAssessment,
-      });
+    res.status(200).json({
+      message: "Assessment assigned successfully!",
+      assessment: updatedAssessment,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -108,27 +107,34 @@ export const getQuestionsForExamination = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const assessment = await Assessment.findById(id).select("title questions");
+    const assessment = await Assessment.findById(id)
+      .select("title questions timeLimit")
+      .populate({
+        path: "questions",
+        populate: { path: "category", select: "name" }, // Populate category details
+      });
 
     if (!assessment) {
       return res.status(404).json({ message: "Assessment not found" });
     }
-
     // Process questions to remove answers from paragraph questions
     const filteredQuestions = assessment.questions.map((q) => {
       return {
         _id: q._id,
         type: q.type,
+        imageUrl: q.imageUrl,
         paragraph: q.paragraph, // Keep the paragraph if it exists
         question: q.question,
         choices: q.type === "mcq" ? q.choices : undefined, // Include choices for MCQs
-        isMultiple: q.isMultiple, // Include if it's a multiple-answer MCQ
+        isMultiple: q.isMultiple,
+        category: q.category ? { _id: q.category._id, name: q.category.name } : null, // Include category details // Include if it's a multiple-answer MCQ
       };
     });
 
     res.status(200).json({
       assessmentId: assessment._id,
       assessmentTitle: assessment.title,
+      timeLimit: assessment.timeLimit,
       questions: filteredQuestions,
     });
   } catch (error) {
@@ -178,7 +184,9 @@ export const EvaluateAnswers = async (req, res) => {
 
       let marks = 0;
       if (question.isMultiple) {
-        const correctCount = [...userChoices].filter((id) => correctChoices.has(id)).length;
+        const correctCount = [...userChoices].filter((id) =>
+          correctChoices.has(id)
+        ).length;
         marks = correctCount; // 1 mark per correct answer selected
       } else {
         marks = correctChoices.has([...userChoices][0]) ? 1 : 0; // Single-choice MCQ = 1 mark if correct
@@ -197,13 +205,14 @@ export const EvaluateAnswers = async (req, res) => {
 
     await grade.save();
 
-    return res.status(200).json({ message: "MCQ Auto-Grading Completed!", mcqScore });
+    return res
+      .status(200)
+      .json({ message: "MCQ Auto-Grading Completed!", mcqScore });
   } catch (error) {
     console.error("Error grading exam:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 export const getStudentAnswers = async (req, res) => {
   try {
@@ -288,12 +297,10 @@ export const saveStudentAnswer = async (req, res) => {
 
     await answerRecord.save();
 
-    res
-      .status(200)
-      .json({
-        message: "Answer saved successfully",
-        answers: answerRecord.answers,
-      });
+    res.status(200).json({
+      message: "Answer saved successfully",
+      answers: answerRecord.answers,
+    });
   } catch (error) {
     console.error("Error saving answer:", error);
     res
@@ -395,13 +402,11 @@ export const updateGrade = async (req, res) => {
 
     await gradeDoc.save();
 
-    res
-      .status(200)
-      .json({
-        message: "Grades updated successfully!",
-        manualScore,
-        totalScore: gradeDoc.totalScore,
-      });
+    res.status(200).json({
+      message: "Grades updated successfully!",
+      manualScore,
+      totalScore: gradeDoc.totalScore,
+    });
   } catch (error) {
     console.error("Error updating grades:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -419,10 +424,10 @@ export const deleteAssessment = async (req, res) => {
     }
 
     // Delete related answers
-    await Answer.deleteMany({ testId:assessmentId });
+    await Answer.deleteMany({ testId: assessmentId });
 
     // Delete related grades
-    await Grade.deleteMany({ testId:assessmentId });
+    await Grade.deleteMany({ testId: assessmentId });
 
     // Delete the assessment itself
     await Assessment.findByIdAndDelete(assessmentId);
@@ -443,7 +448,9 @@ export const removeClassroomFromAssessment = async (req, res) => {
       $pull: { assignedClassrooms: classroomId },
     });
 
-    res.status(200).json({ message: "Classroom removed from assessment successfully." });
+    res
+      .status(200)
+      .json({ message: "Classroom removed from assessment successfully." });
   } catch (error) {
     console.error("Error removing classroom from assessment:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -455,7 +462,9 @@ export const uploadAssessmentImage = async (req, res) => {
     // Use multer upload middleware
     upload(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ message: "File upload failed", error: err.message });
+        return res
+          .status(400)
+          .json({ message: "File upload failed", error: err.message });
       }
 
       if (!req.file) {
@@ -465,10 +474,15 @@ export const uploadAssessmentImage = async (req, res) => {
       // Get uploaded file info (Only one file, since it's an image upload)
       const uploadedFile = {
         filename: req.file.filename,
-        imageUrl: `http://192.168.200.199:5001/uploads/assignment/${req.file.filename}`, // Corrected URL
+        imageUrl: `http://localhost:5001/uploads/assessment/${req.file.filename}`, // Corrected URL
       };
 
-      res.status(200).json({ message: "Image uploaded successfully", imageUrl: uploadedFile.imageUrl });
+      res
+        .status(200)
+        .json({
+          message: "Image uploaded successfully",
+          imageUrl: uploadedFile.imageUrl,
+        });
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
