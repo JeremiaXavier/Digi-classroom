@@ -55,7 +55,7 @@ const Classrooms = () => {
             {/* Banner Image */}
             <div className="h-40 w-full overflow-hidden relative">
               <img
-                src={classroom.bannerImage || "https://picsum.photos/1200/300?classroom"}
+                src={classroom.bannerUrl || "https://picsum.photos/1200/300?classroom"}
                 alt={`Banner for ${classroom.name}`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -79,7 +79,7 @@ const Classrooms = () => {
 
             <CardContent className="p-6">
               <p className="text-sm text-gray-600">
-                Created by: <span className="font-semibold">{classroom.createdBy.name}</span>
+                Created by: <span className="font-semibold">{classroom.createdBy.fullName}</span>
               </p>
             </CardContent>
           </Card>

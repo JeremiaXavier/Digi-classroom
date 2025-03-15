@@ -127,6 +127,8 @@ function App() {
           <Route path="c/:id" element={<TeacherClassroomDetails />} />
           <Route path="a/:assignmentId" element={<AssignmentDetailsTeacher />} />
           <Route path="c" element={<ManageClassrooms />} />
+          <Route path="new" element={<CreateClassroom/>}/>
+          <Route path="" element={<ManageClassrooms />} />
           <Route path="a" element={<Assignments />} />
           <Route path="g" element={<Grades />} />
           <Route path="create" element={<CreateClassroom />} />

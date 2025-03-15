@@ -19,9 +19,9 @@ const TeacherDashboard = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { logout, authUser } = useAuthStore();
-
+  /* 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => setIsModalOpen(false); */
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
@@ -70,13 +70,13 @@ const TeacherDashboard = () => {
               </Link>
             </li>
             <li>
-              <button
-                onClick={openModal}
+              <Link
+                to="new"
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#9228d6] transition-all duration-300 w-full text-left"
               >
                 <PlusCircle size={22} className="text-white" />
                 <span className="font-medium">Create Classroom</span>
-              </button>
+              </Link>
             </li>
           </ul>
         </nav>
@@ -93,8 +93,9 @@ const TeacherDashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-2 bg-white overflow-auto">
-        <header className="flex items-center justify-between mb-6">
+      <main className="flex-1 flex flex-col bg-white h-screen">
+        {/* Fixed Header */}
+        <header className="flex items-center justify-between p-2 bg-gradient-to-b from-[#f8f7f9] to-[#f7f1fc]  fixed top-0 left-0 right-0 z-10">
           <button className="md:hidden p-2" onClick={toggleSidebar}>
             <Menu size={24} />
           </button>
@@ -119,7 +120,7 @@ const TeacherDashboard = () => {
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute right-2  mt-2 p-10 bg-white rounded-lg shadow-lg z-10">
+                <div className="absolute right-2 mt-2 p-10 bg-white rounded-lg shadow-lg z-10">
                   <ul className="py-2 text-gray-700">
                     {/* Profile card */}
                     <li className="flex flex-col items-center space-y-2 px-4 py-3 hover:bg-gray-100 cursor-pointer">
@@ -133,7 +134,9 @@ const TeacherDashboard = () => {
                         <p className="text-lg font-semibold">
                           {authUser.fullName}
                         </p>
-                        <p className="text-sm text-gray-500">{authUser.email}</p>
+                        <p className="text-sm text-gray-500">
+                          {authUser.email}
+                        </p>
                       </div>
                     </li>
 
@@ -142,7 +145,10 @@ const TeacherDashboard = () => {
 
                     {/* Manage Profile Option */}
                     <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <Link to="/manage-profile" className="flex items-center space-x-2">
+                      <Link
+                        to="/manage-profile"
+                        className="flex items-center space-x-2"
+                      >
                         <User size={16} />
                         <span className="text-sm">Manage Profile</span>
                       </Link>
@@ -150,9 +156,14 @@ const TeacherDashboard = () => {
 
                     {/* Logout Option */}
                     <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <button onClick={handleLogout} className="flex items-center space-x-2 w-full">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 w-full"
+                      >
                         <LogOut size={16} />
-                        <span className="text-sm">Logout from All Sessions</span>
+                        <span className="text-sm">
+                          Logout from All Sessions
+                        </span>
                       </button>
                     </li>
                   </ul>
@@ -162,9 +173,9 @@ const TeacherDashboard = () => {
           </div>
         </header>
 
-        <div className="bg-white h-full rounded-lg p-4">
+        {/* Scrollable Outlet */}
+        <div className="flex-1 overflow-auto mt-[60px] p-4">
           <Outlet />
-          <CreateClassroom isOpen={isModalOpen} onClose={closeModal} set ={setIsModalOpen}/>
         </div>
       </main>
     </div>

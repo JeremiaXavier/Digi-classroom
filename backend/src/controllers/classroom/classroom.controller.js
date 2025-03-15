@@ -11,22 +11,20 @@ import path from "path";
 import User from "../../models/user.model.js";
 
 export const createClassrooms = async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, bannerUrl } = req.body;
 
   try {
-    // Check if the user is authorized (from the auth middleware)
     if (!req.user || req.user.role !== "teacher") {
       return res.status(403).json({ message: "Unauthorized access" });
     }
 
-    // Create a new classroom instance
     const newClassroom = new Classroom({
       name,
       description,
-      createdBy: req.user._id, // reference the creator from the authenticated user's id
+      bannerUrl, // Store banner URL
+      createdBy: req.user._id,
     });
 
-    // Save the classroom to the database
     await newClassroom.save();
 
     return res.status(201).json({
@@ -35,11 +33,10 @@ export const createClassrooms = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating classroom:", error.message);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
 
 export const getClassrooms = async (req, res) => {
   try {
