@@ -325,12 +325,7 @@ export const saveStudentAnswer = async (req, res) => {
           questionId,
           isMultiple,
           answerId: isMultiple
-            ? [
-                ...new Set([
-                  ...answerRecord.answers[existingAnswerIndex].answerId,
-                  ...answerId,
-                ]),
-              ]
+            ?  [...new Set(answerId)] 
             : answerId,
           paragraphAnswer: "", // Ensure no paragraphAnswer for MCQs
         };
