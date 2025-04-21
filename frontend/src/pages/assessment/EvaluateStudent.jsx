@@ -5,19 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-slice";
 import { axiosInstance } from "@/lib/axios";
+import toast from "react-hot-toast";
 
 const EvaluateStudent = () => {
   const { userId, testId } = useParams();
   const navigate = useNavigate();
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(false);
-    const {idToken} = useAuthStore();
+  const { idToken } = useAuthStore();
   useEffect(() => {
     const fetchStudentAnswers = async () => {
       try {
-        const { data } = await axiosInstance.get(`/assess/student/${userId}/${testId}`,{
+        const { data } = await axiosInstance.get(
+          `/assess/student/${userId}/${testId}`,
+          {
             headers: { Authorization: `Bearer ${idToken}` },
-          });
+          }
+        );
         setAnswers(data.answers);
       } catch (error) {
         console.error("Error fetching student answers:", error);
@@ -27,13 +31,16 @@ const EvaluateStudent = () => {
     fetchStudentAnswers();
   }, [userId, testId]);
 
-  const handleGradeChange = (questionId, marks) => {
-    setAnswers((prevAnswers) =>
-      prevAnswers.map((ans) =>
-        ans.questionId === questionId ? { ...ans, marks: Number(marks) } : ans
-      )
-    );
+  const handleGradeChange = (questionId, marks, type) => {
+    if (type === "paragraph") {
+      setAnswers((prevAnswers) =>
+        prevAnswers.map((ans) =>
+          ans.questionId === questionId ? { ...ans, marks: Number(marks) } : ans
+        )
+      );
+    }
   };
+  
 
   const handleSubmitGrades = async () => {
     setLoading(true);
@@ -51,7 +58,6 @@ const EvaluateStudent = () => {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="p-6">
@@ -63,7 +69,22 @@ const EvaluateStudent = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-700 mb-2">Student Answer:</p>
-            <p className="bg-gray-100 p-3 rounded">{answer.paragraphAnswer}</p>
+            {answer.type === "mcq" && (
+              <div className="bg-gray-100 p-3 rounded">
+                {answer.userSelectedChoices.length > 0 ? (
+                  answer.userSelectedChoices.map((choice, index) => (
+                    <p key={index}>{choice}</p>
+                  ))
+                ) : (
+                  <p>No answer selected</p>
+                )}
+              </div>
+            )}
+            {answer.type === "paragraph" && (
+              <p className="bg-gray-100 p-3 rounded">
+                {answer.paragraphAnswer}
+              </p>
+            )}
 
             <div className="mt-4">
               <label className="text-sm font-medium">Marks:</label>
@@ -71,7 +92,9 @@ const EvaluateStudent = () => {
                 type="number"
                 min="0"
                 value={answer.marks || ""}
-                onChange={(e) => handleGradeChange(answer.questionId, e.target.value)}
+                onChange={(e) =>
+                  handleGradeChange(answer.questionId, e.target.value)
+                }
                 className="w-24 mt-2"
               />
             </div>

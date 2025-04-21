@@ -184,14 +184,7 @@ const StudentClassroomDetails = () => {
                                 .split(".")
                                 .pop()
                                 .toLowerCase();
-                              const isPreviewable = [
-                                "jpg",
-                                "jpeg",
-                                "png",
-                                "gif",
-                                "mp4",
-                                "pdf",
-                              ].includes(fileExtension);
+                              
 
                               return (
                                 <a href={fileUrl} key={index} target="_blank">
@@ -230,6 +223,7 @@ const StudentClassroomDetails = () => {
                             src={material.uploadedBy.photoURL}
                             alt="User Avatar"
                             className="w-8 h-8 rounded-full object-cover"
+                            referrerPolicy="no-referer"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-gray-300"></div>
@@ -305,19 +299,7 @@ const StudentClassroomDetails = () => {
                                   </span>
 
                                   {/* Preview Button */}
-                                  {isPreviewable && (
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openPreview(fileUrl, fileExtension);
-                                      }}
-                                      variant="outline"
-                                      size="icon"
-                                      className="text-green-600 hover:bg-green-100"
-                                    >
-                                      <Eye />
-                                    </Button>
-                                  )}
+                                  
 
                                   {/* Download Button */}
                                   <Button
@@ -345,6 +327,7 @@ const StudentClassroomDetails = () => {
                             src={assignment.createdBy.photoURL}
                             alt="User Avatar"
                             className="w-8 h-8 rounded-full object-cover"
+                            referrerPolicy="no-referer"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-gray-300"></div>
@@ -375,6 +358,7 @@ const StudentClassroomDetails = () => {
                       src={member.photoURL || "/default-avatar.png"}
                       alt="User Avatar"
                       className="w-12 h-12 rounded-full object-cover"
+                      referrerPolicy="no-referer"
                     />
                     <p className="text-lg text-gray-500">
                       {member.fullName || "Unknown"}

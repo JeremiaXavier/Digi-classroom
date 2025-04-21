@@ -1,12 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { useAuthStore } from "@/store/auth-slice";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { LogIn } from "lucide-react"; 
 import { Link, useNavigate } from "react-router-dom";
-import samplelogo from "../../../public/classroom2.jpg";
+import samplelogo from "../../assets/edupilot.png";
 const AuthLogin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -16,9 +13,6 @@ const AuthLogin = () => {
   const { login, isLogginIn, googleLogin } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
-  /* const validateInput = ()=>{
-
-  }  */ /* for validating the form */
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -32,11 +26,10 @@ const AuthLogin = () => {
       <div className="flex flex-grow">
         {/* Left column */}
         <div className="hidden md:flex flex-1 items-center justify-center bg-white">
-          <div className="flex flex-col text-center text-black-600">
+          <div className="flex flex-col text-center  items-center text-black-600">
             {/* Placeholder for classroom design */}
-            <img src={samplelogo} alt="" />
-            <p className="text-4xl font-semibold font-serif"> Digi-Classroom</p>
-            <p className="text-sm">Learn, Explore, and Grow</p>
+            <img src={samplelogo} alt="" className="w-6/12" />
+            
           </div>
         </div>
 
@@ -45,7 +38,7 @@ const AuthLogin = () => {
           <div className="w-full max-w-md bg-white p-8 shadow-md rounded-lg">
             <div className="text-center mb-10">
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Sign in to your account
+                Login with Google 
               </h1>
               <p className="mt-2">
                 Don t have an account
@@ -57,65 +50,15 @@ const AuthLogin = () => {
                 </Link>
               </p>
             </div>
-            <form onSubmit={onSubmit}>
-              <div className="flex flex-col gap-3">
-                <Label className="mb-1">Email</Label>
-                <Input
-                  name="email"
-                  placeholder="Enter your Email"
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      email: event.target.value,
-                    })
-                  }
-                />
-
-                <Label className="mb-1">Password</Label>
-                <div className="relative flex items-center">
-                  <Input
-                    name="password"
-                    placeholder="Enter your password"
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        password: event.target.value,
-                      })
-                    }
-                    className="pr-10" // Leave space for the icon
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-2 text-gray-500"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-
-                <Button type="submit" className="mt-2 w-full">
-                  {isLogginIn ? (
-                    <>
-                      <Loader2 className="size-5 animate-spin" />
-                    </>
-                  ) : (
-                    "Login"
-                  )}
-                </Button>
-              </div>
-            </form>
+            
             <Button
               variant="outline"
-              className="w-full mt-4"
+              className="w-full mt-4 flex justify-center items-center"
               onClick={onGoogleLogin}
-            >       <LogIn className="w-5 h-5 mr-2" />
-
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+              </svg>
               Login with Google
             </Button>
           </div>

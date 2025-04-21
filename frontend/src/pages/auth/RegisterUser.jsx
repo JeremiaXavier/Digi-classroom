@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth-slice";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import samplelogo from "../../../public/classroom2.jpg";
+import samplelogo from "../../assets/edupilot.png";
 import { Link, useNavigate } from "react-router-dom";
 
 const AuthRegister = () => {
@@ -64,11 +64,11 @@ const AuthRegister = () => {
       <div className="flex flex-grow">
         {/* Left column */}
        <div className="hidden md:flex flex-1 items-center justify-center bg-white">
-                 <div className="flex flex-col text-center text-black-600">
+                 <div className="flex flex-col text-center items-center text-black-600">
                    {/* Placeholder for classroom design */}
-                   <img src={samplelogo} alt="" />
-                   <p className="text-4xl font-semibold font-serif"> Digi-Classroom</p>
-                   <p className="text-sm">Learn, Explore, and Grow</p>
+                   <img src={samplelogo} alt="" className="w-6/12" />
+                   {/* <p className="text-4xl font-semibold font-serif"> Digi-Classroom</p>
+                   <p className="text-sm">Learn, Explore, and Grow</p> */}
                  </div>
                </div>
 
@@ -90,7 +90,7 @@ const AuthRegister = () => {
               </p>
             </div>
 
-            <form onSubmit={onSubmit}>
+            {/* <form onSubmit={onSubmit}>
               <div className="flex flex-col gap-3">
                 <Label className="mb-1">User Name</Label>
                 <Input
@@ -157,13 +157,16 @@ const AuthRegister = () => {
                   )}
                 </Button>
               </div>
-            </form>
+            </form> */}
 
             <Button
               variant="outline"
               className="w-full mt-4"
               onClick={googleSignup}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+              </svg>
               Sign up with Google
             </Button>
           </div>

@@ -159,3 +159,16 @@ export const updateRole = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+export const scorepilotAuthLogin = async(req,res)=>{
+  try {
+    const examuserId = req.headers["x-exam-user-id"]; // Extract examuserId (for Electron)
+    const otp = req.headers["x-otp"];
+    const user = await User.findOne({ examuserId,otp });
+    if(user) return res.status(200).json({user});
+    else return res.status(404).json({message:"user not found"});
+  } catch (error) {
+    return res.status(404).json({message:"User not found"});
+  }
+}

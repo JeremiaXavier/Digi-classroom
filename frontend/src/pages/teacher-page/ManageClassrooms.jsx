@@ -55,8 +55,7 @@ const Classrooms = () => {
             {/* Banner Image */}
             <div className="h-40 w-full overflow-hidden relative">
               <img
-                src={classroom.bannerUrl || "https://picsum.photos/1200/300?classroom"}
-                alt={`Banner for ${classroom.name}`}
+                src={classroom.bannerUrl}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               {/* Delete Button */}

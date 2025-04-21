@@ -69,15 +69,7 @@ const StudentDashboard = () => {
                 <span>Join</span>
               </Link>
             </li>
-            <li>
-              <Link
-                to="../assessment/s"
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#7618a9] transition"
-              >
-                <Clipboard size={24} />
-                <span>Assessments</span>
-              </Link>
-            </li>
+            
           </ul>
         </nav>
 
@@ -103,9 +95,9 @@ const StudentDashboard = () => {
 
           {/* Profile & Settings */}
           <div className="flex items-center space-x-3 md:ml-auto">
-            <button className="flex items-center space-x-2 px-3 py-2 text-black rounded-lg">
+            {/* <button className="flex items-center space-x-2 px-3 py-2 text-black rounded-lg">
               <Settings size={25} />
-            </button>
+            </button> */}
             <div className="relative">
               <div
                 className="flex items-center rounded-lg p-2 cursor-pointer md:space-x-3 sm:flex-row"

@@ -67,7 +67,7 @@ export const getClassrooms = async (req, res) => {
     const joinedClassrooms = await Member.find({ userId })
       .populate({
         path: "classroomId",
-        select: "name description createdBy",
+        select: "name description createdBy bannerUrl",
         populate: {
           path: "createdBy",
           select: "fullName photoURL",
@@ -112,7 +112,7 @@ export const StudentGetClassrooms = async (req, res) => {
     const joinedClassrooms = await Member.find({ userId })
       .populate({
         path: "classroomId",
-        select: "name description createdBy",
+        select: "name description createdBy bannerUrl",
         populate: {
           path: "createdBy",
           select: "fullName photoURL", // Include photoURL
@@ -130,6 +130,7 @@ export const StudentGetClassrooms = async (req, res) => {
           description: member.classroomId.description,
           createdBy: member.classroomId.createdBy?.fullName || "Unknown",
           creatorPhoto: member.classroomId.createdBy?.photoURL || "",
+          bannerUrl:member.classroomId.bannerUrl,
           role: member.role,
         };
       })

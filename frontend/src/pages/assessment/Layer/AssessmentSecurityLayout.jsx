@@ -66,8 +66,9 @@ const ExamSecurityLayout = () => {
             <nav className="mt-8 flex flex-col gap-3">
               <SidebarButton icon={LayoutDashboard} text="Create Assessment" onClick={() => navigate("/assessment/create")} />
               <SidebarButton icon={ListChecks} text="Your Assessments" onClick={() => navigate("/assessment/view")} />
-              <SidebarButton icon={BarChart3} text="View Scoreboard" onClick={() => navigate("/assessment/scoreboard")} />
+              <SidebarButton icon={BarChart3} text="View Scoreboard" onClick={() => navigate("/assessment/score")} />
               <SidebarButton icon={ClipboardList} text="Evaluate" onClick={() => navigate("/assessment/evaluate")} />
+              <SidebarButton icon={ClipboardList} text="Integrity" onClick={() => navigate("/assessment/malpractice")} />
               <SidebarButton icon={LogOut} text="Exit" onClick={() => navigate("/teacher/dashboard")} />
             </nav>
 

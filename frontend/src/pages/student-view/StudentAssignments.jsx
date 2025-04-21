@@ -193,7 +193,7 @@ const AssignmentDetails = () => {
                   id="file-upload"
                   onChange={handleFileUpload}
                 />
-                {!isSubmitted && (
+                {!isSubmitted &&  (
                   <label
                     htmlFor="file-upload"
                     className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer flex items-center gap-2 hover:bg-blue-600 text-sm sm:text-base"
@@ -224,11 +224,12 @@ const AssignmentDetails = () => {
               )}
 
               {!isSubmitted && (
+                
                 <Button
-                  className="mt-4 w-full bg-green-500 hover:bg-green-600 text-sm sm:text-lg py-2"
-                  onClick={handleSubmit}
-                >
-                  Hand In Assignment
+                  className={`mt-4 w-full text-sm sm:text-lg py-2 ${uploadedFiles.length===0 ? " bg-white":" bg-green-500"}`}
+                  onClick={uploadedFiles.length!=0? handleSubmit: null}
+                > {uploadedFiles.length ===0 ? null: "Hand In"}
+                  
                 </Button>
               )}
 

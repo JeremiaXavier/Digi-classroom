@@ -42,34 +42,30 @@ const StudentClassrooms = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {classrooms.map((classroom) => (
           <Card
-          onClick={()=>navigate(`/student/dashboard/c/${classroom._id}`)}
+            onClick={() => navigate(`/student/dashboard/c/${classroom._id}`)}
             key={classroom._id}
-            className="relative bg-white/80 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300"
+            className="relative group bg-white shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 rounded-xl overflow-hidden border border-gray-200 cursor-pointer"
           >
             {/* Banner Image */}
-            <div className="h-40 w-full relative">
+            <div className="h-40 w-full overflow-hidden relative">
               <img
-                src={
-                  classroom.bannerImage ||
-                  "https://picsum.photos/1200/300?classroom"
-                }
-                alt={`Banner for ${classroom.name}`}
-                className="w-full h-full object-cover"
+                src={classroom.bannerUrl}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent"></div>
             </div>
 
             {/* Content */}
-            <CardHeader className="p-5">
-              <CardTitle className="text-xl font-semibold text-gray-900">
+            <CardHeader className="p-6 bg-gradient-to-r from-[#af47e8] to-[#7a1cbf] text-white ">
+              <CardTitle className="text-xl font-semibold">
                 {classroom.name}
               </CardTitle>
-              <CardDescription className="text-gray-600 line-clamp-2">
+              <CardDescription className="text-sm opacity-90 text-white">
                 {classroom.description}
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-5 flex items-center justify-between text-sm text-gray-600">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <Avatar className="w-8 h-8">
                   <AvatarImage
@@ -77,7 +73,7 @@ const StudentClassrooms = () => {
                       classroom.creatorPhoto ||
                       "https://ui-avatars.com/api/?name=Unknown&background=random"
                     }
-                    alt={classroom.createdBy|| "Unknown"}
+                    alt={classroom.createdBy || "Unknown"}
                   />
                   <AvatarFallback>
                     {classroom.createdBy?.charAt(0) || "U"}
@@ -88,8 +84,6 @@ const StudentClassrooms = () => {
                 </span>
               </div>
             </CardContent>
-
-    
           </Card>
         ))}
       </div>

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const choiceSchema = new mongoose.Schema({
   text: { type: String, required: true }, // MCQ choice text
   isCorrect: { type: Boolean, default: false }, // Marks correct MCQ choices
@@ -54,6 +53,7 @@ const assessmentSchema = new mongoose.Schema({
   assignedClassrooms: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Classroom" },
   ], // Links assessments to classrooms
+  
   questions: { type: [questionSchema], required: true },
   timeLimit: { type: Number, required: true }, // 🔹 Time limit in minutes
   createdAt: { type: Date, default: Date.now },

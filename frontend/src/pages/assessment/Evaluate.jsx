@@ -50,18 +50,20 @@ const Evaluate = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {assessments.map((assessment) => (
             <Card
-              key={assessment._id}
-              className="cursor-pointer hover:shadow-lg transition"
-              onClick={() => handleSelectAssessment(assessment._id)}
-            >
-              <CardHeader>
-                <h2 className="text-lg font-semibold">{assessment.title}</h2>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">{assessment.description}</p>
-                <p className="text-xs text-gray-500">Click to view students</p>
-              </CardContent>
-            </Card>
+            key={assessment._id}
+            className="cursor-pointer hover:scale-105 hover:shadow-xl transition-all duration-300 ease-in-out bg-gradient-to-r from-[#6EE7B7] via-[#3B82F6] to-[#9333EA] rounded-xl shadow-lg overflow-hidden"
+            onClick={() => handleSelectAssessment(assessment._id)}
+          >
+            <CardHeader className="p-5 text-center bg-white rounded-t-xl">
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500">
+                {assessment.title}
+              </h2>
+            </CardHeader>
+            <CardContent className="p-5 bg-white text-black">
+              <p className="text-sm text-gray-700">{assessment.description}</p>
+              <p className="text-xs text-gray-500 mt-2">Click to view the scoreboard</p>
+            </CardContent>
+          </Card>
           ))}
         </div>
       ) : (

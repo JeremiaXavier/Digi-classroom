@@ -13,13 +13,28 @@ const app = express();
 // Load environment variables from .env file
 dotenv.config();
 
-// CORS Middleware Setup - Place this at the top to handle all routes
-app.use(cors({
-  origin: ["http://localhost:5173",process.env.CLIENT_URL],  // Allow frontend URL
-  credentials: true,  // Allow cookies and authorization headers
-  methods: ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'], // Allow necessary HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allow headers
-}));
+const allowedOrigins = [
+  "http://localhost:5173",  // React Web App (Vite)
+  "http://127.0.0.1:5173",  // Alternative Localhost
+  process.env.CLIENT_URL,   // Your deployed frontend URL
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || /^file:\/\//.test(origin)) {
+        callback(null, origin); // ✅ Return only the matched origin
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With","x-exam-user-id","x-otp"],
+  })
+);
+
+
 
 // Handle preflight request
 app.options('*', cors()); // Handle CORS preflight request for all routes

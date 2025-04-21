@@ -139,7 +139,7 @@ const TeacherClassroomDetails = () => {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
   const [newSubject, setNewSubject] = useState("");
-  const { idToken } = useAuthStore();
+  const { idToken,authUser } = useAuthStore();
   /*   const handleCreateOption = (type) => {
     setCreateDialogType(type);
   }; */
@@ -261,6 +261,9 @@ const TeacherClassroomDetails = () => {
 
   const handleRemoveMember = async (memberId) => {
     try {
+      if(memberId==authUser._id){
+        return toast.error("You cannot remove yourself. Because you are the creator");
+      }
       const response = await axiosInstance.delete(`/c/${id}/remove-member`, {
         data: { memberId }, // Correct way to pass body in DELETE request
         headers: {
@@ -720,7 +723,7 @@ const TeacherClassroomDetails = () => {
                   }}
                 >
                   <PlusCircle className="w-5 h-5" />
-                  <span>Create New</span>
+                  <span>Create</span>
                 </button>
               </div>
               <p className="text-gray-500">No Materials uploaded yet.</p>
@@ -869,7 +872,7 @@ const TeacherClassroomDetails = () => {
                   }}
                 >
                   <PlusCircle className="w-5 h-5" />
-                  <span>Assignment</span>
+                  <span>Create</span>
                 </button>
               </div>
               <p className="text-gray-500">No assignments uploaded yet.</p>
@@ -884,7 +887,7 @@ const TeacherClassroomDetails = () => {
                   }}
                 >
                   <PlusCircle className="w-5 h-5" />
-                  <span>Assignment</span>
+                  <span>Create</span>
                 </button>
               </div>
               <div className="grid gap-4 grid-cols-1 w-full">
@@ -1139,14 +1142,14 @@ const TeacherClassroomDetails = () => {
                       >
                         Remove
                       </DropdownMenuItem>
-                      <DropdownMenuItem
+                      {/* <DropdownMenuItem
                         onClick={() => handleSuspend(member._id)}
                       >
                         Suspend
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleMore(member._id)}>
                         More
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </Card>
