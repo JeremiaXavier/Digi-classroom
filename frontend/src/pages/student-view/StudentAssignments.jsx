@@ -84,6 +84,7 @@ const AssignmentDetails = () => {
     const formData = new FormData();
     uploadedFiles.forEach((file) => {
       formData.append("files", file);
+      
     });
 
     setIsSubmitted(false);
@@ -125,8 +126,8 @@ const AssignmentDetails = () => {
   }
 
   return (
-    <div className="w-full  flex items-center justify-center bg-white px-4 sm:px-2 overflow-auto mt-6">
-      <Card className="w-full max-w-4xl  border-none rounded-2xl bg-white overflow-hidden relative flex flex-col">
+    <div className="w-full  flex items-center justify-center bg-white px-2 sm:px-2 overflow-auto mt-6">
+      <Card className="w-full max-w-4xl  border-none rounded-2xl bg-white overflow-hidden relative flex flex-col ">
         {/* Close Button */}
         <button
           onClick={() => navigate(-1)}
@@ -247,7 +248,7 @@ const AssignmentDetails = () => {
             </div>
 
             {/* Comment Section (NO TEXTAREA) */}
-            <div className="bg-white p-4 sm:p-5 rounded-lg border-none flex flex-col">
+            {/* <div className="bg-white p-4 sm:p-5 rounded-lg border-none flex flex-col">
               <label className="block text-gray-700 font-medium">
                 Leave a Comment:
               </label>
@@ -259,14 +260,9 @@ const AssignmentDetails = () => {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
-                <Button
-                  className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 text-sm sm:text-base"
-                  disabled={!comment.trim()}
-                >
-                  Send
-                </Button>
+               
               </div>
-            </div>
+            </div> */}
             {isSubmitted && (grade || feedback) && (
               <div className="bg-white p-4 sm:p-5 rounded-lg border mt-6 ">
                 

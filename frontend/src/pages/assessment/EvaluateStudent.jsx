@@ -93,8 +93,9 @@ const EvaluateStudent = () => {
                 min="0"
                 value={answer.marks || ""}
                 onChange={(e) =>
-                  handleGradeChange(answer.questionId, e.target.value)
+                  handleGradeChange(answer.questionId, e.target.value, answer.type)
                 }
+                
                 className="w-24 mt-2"
               />
             </div>

@@ -119,7 +119,7 @@ const StudentExamSecurityLayout = () => {
       <main className="w-4/5 h-full overflow-auto bg-gradient-to-br from-gray-50 to-white p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800 tracking-wide flex items-center">
-            🚀 Digi-Classroom
+            🚀 Scorepilot
             <span className="text-blue-600 ml-2">Exam Portal</span>
           </h1>
           <button

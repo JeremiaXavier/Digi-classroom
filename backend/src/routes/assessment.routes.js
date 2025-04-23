@@ -1,11 +1,12 @@
 import express from "express";
 import { protectRoute, scorepilotAuth } from "../middlewares/auth.middleware.js";
-import { addCategory, assignAssessment, createAssessment, deleteAssessment, EvaluateAnswers, getAssessments, getCategories, getGradesByAssessment, getGradesByUser, getMalpracticeLogsForAssessment, getQuestionsForExamination, getStudentAnswers, getStudentAnswersReview, getStudentAssessments, getStudentsAttended, getStudentScoreboard, malpracticeAction, removeClassroomFromAssessment, removeSuspension, saveStudentAnswer, setMalpracticeLog, studentExitExam, suspendStudent, updateGrade, uploadAssessmentImage } from "../controllers/assessment/assessment.controller.js";
+import { addCategory, assignAssessment, changePin, createAssessment, deleteAssessment, EvaluateAnswers, getAssessments, getCategories, getGradesByAssessment, getGradesByUser, getMalpracticeLogsForAssessment, getQuestionsForExamination, getStudentAnswers, getStudentAnswersReview, getStudentAssessments, getStudentsAttended, getStudentScoreboard, malpracticeAction, removeClassroomFromAssessment, removeSuspension, saveStudentAnswer, setMalpracticeLog, studentExitExam, suspendStudent, updateGrade, uploadAssessmentImage } from "../controllers/assessment/assessment.controller.js";
 import { MalpracticeLog } from "../models/malpracticelog.model.js";
 
 const assessmentRouter = express.Router();
 
 assessmentRouter.post("/create",protectRoute,createAssessment);
+assessmentRouter.put("/change-pin",protectRoute,changePin);
 assessmentRouter.get("/view",protectRoute,getAssessments);
 assessmentRouter.get("/s/view",scorepilotAuth,getStudentAssessments);
 assessmentRouter.post("/assign",protectRoute,assignAssessment);

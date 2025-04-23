@@ -198,12 +198,12 @@ export const getClassroomMembers = async (req, res) => {
   const { id } = req.params;
   try {
     const members = await Member.find({ classroomId: id })
-      .populate("userId", "fullName email photoURL") // Populate user details (if needed)
+      .populate("userId", "fullName email photoURL role") // Populate user details (if needed)
       .sort({ createdAt: -1 });
 
     const classroom = await Classroom.findById(id).populate(
       "createdBy",
-      "fullName email photoURL"
+      "fullName email photoURL role"
     );
 
     if (!classroom) {
@@ -219,12 +219,14 @@ export const getClassroomMembers = async (req, res) => {
             fullName: creator.fullName,
             email: creator.email,
             photoURL: creator.photoURL,
+            role:creator.role,
           },
           ...members.map((m) => ({
             _id: m.userId._id,
             fullName: m.userId.fullName,
             email: m.userId.email,
             photoURL: m.userId.photoURL,
+            role:m.userId.role
           })),
         ]
       : members.map((m) => ({
@@ -232,6 +234,7 @@ export const getClassroomMembers = async (req, res) => {
           fullName: m.userId.fullName,
           email: m.userId.email,
           photoURL: m.userId.photoURL,
+          role:m.userId.role,
         }));
 
     res.status(200).json({ allMembers });
@@ -521,6 +524,41 @@ export const deleteMember = async (req, res) => {
     return res.status(500).json({ error: "Failed to remove member" });
   }
 };
+
+export const exitClassroom = async (req, res) => {
+  try {
+    const { memberId } = req.body; // Extract memberId from the request body
+    const { classroomId } = req.params; // Extract classroomId from the request params
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) {
+      return res.status(404).json({ error: "Classroom not found" });
+    }
+
+    // Prevent removing the classroom creator (owner)
+    if (classroom.createdBy == memberId) {
+      return res
+        .status(403)
+        .json({ message: "Cannot exit from the classroom " });
+    }
+    // Check if the member exists in the given classroom
+    const member = await Member.findOne({ classroomId, userId: memberId });
+
+    if (!member) {
+      return res
+        .status(404)
+        .json({ error: "Already exited from this classroom" });
+    }
+
+    // Remove the member from the database
+    await Member.findOneAndDelete({ classroomId, userId: memberId });
+
+    return res.json({ message: "Exited successfully" });
+  } catch (error) {
+    console.error("Error removing classroom:", error);
+    return res.status(500).json({ error: "Failed to exit" });
+  }
+};
+
 
 export const getSubjects = async (req, res) => {
   try {

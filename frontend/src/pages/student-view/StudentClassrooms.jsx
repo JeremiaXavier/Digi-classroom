@@ -11,11 +11,13 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import toast from "react-hot-toast";
 
 const StudentClassrooms = () => {
-  const { idToken } = useAuthStore();
+  const { idToken,authUser } = useAuthStore();
   const [classrooms, setClassrooms] = useState([]);
   const navigate = useNavigate();
   useEffect(() => {
@@ -33,7 +35,25 @@ const StudentClassrooms = () => {
 
     fetchClassrooms();
   }, [idToken]);
+  const handleRemoveMember = async (classroomId) => {
+    try {
+      
+      const response = await axiosInstance.delete(`/c/${classroomId}/exit-classroom`, {
+        data: { memberId:authUser._id }, // Correct way to pass body in DELETE request
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
 
+      toast.success("Exited from classroom successfully");
+
+      // Update the UI by filtering out the removed member
+      
+    } catch (error) {
+      console.error("Error happened:", error);
+      toast.error(error.response?.data?.message || "Cannot exit from classroom");
+    }
+  };
   return (
     <div className="p-6">
       <h2 className="text-3xl font-extrabold mb-6 text-gray-800">
@@ -84,6 +104,20 @@ const StudentClassrooms = () => {
                 </span>
               </div>
             </CardContent>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                  <MoreVertical size={20} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => handleRemoveMember(classroom._id)}
+                >
+                  Exit from classroom
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </Card>
         ))}
       </div>

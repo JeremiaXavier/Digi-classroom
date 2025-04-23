@@ -66,7 +66,7 @@ const TeacherDashboard = () => {
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#9228d6] transition-all duration-300"
               >
                 <Clipboard size={22} className="text-white" />
-                <span className="font-medium">Assessment Portal</span>
+                <span className="font-medium">Assessments</span>
               </Link>
             </li>
             <li>
@@ -100,9 +100,9 @@ const TeacherDashboard = () => {
             <Menu size={24} />
           </button>
           <div className="flex items-center space-x-3 md:ml-auto">
-            <button className="flex items-center space-x-2 px-2 py-2 text-black rounded-lg">
+            {/* <button className="flex items-center space-x-2 px-2 py-2 text-black rounded-lg">
               <Settings size={25} />
-            </button>
+            </button> */}
             <div className="relative">
               <div
                 className="flex bg-white items-center rounded-lg p-2 cursor-pointer md:space-x-3 sm:flex-row"
@@ -144,15 +144,7 @@ const TeacherDashboard = () => {
                     <li className="border-t border-gray-200"></li>
 
                     {/* Manage Profile Option */}
-                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <Link
-                        to="/manage-profile"
-                        className="flex items-center space-x-2"
-                      >
-                        <User size={16} />
-                        <span className="text-sm">Manage Profile</span>
-                      </Link>
-                    </li>
+
 
                     {/* Logout Option */}
                     <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
@@ -162,7 +154,7 @@ const TeacherDashboard = () => {
                       >
                         <LogOut size={16} />
                         <span className="text-sm">
-                          Logout from All Sessions
+                          Logout
                         </span>
                       </button>
                     </li>
@@ -174,7 +166,7 @@ const TeacherDashboard = () => {
         </header>
 
         {/* Scrollable Outlet */}
-        <div className="flex-1 overflow-auto mt-[60px] p-4">
+        <div className="flex-1  overflow-auto mt-[60px] p-4">
           <Outlet />
         </div>
       </main>

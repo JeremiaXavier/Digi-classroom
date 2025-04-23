@@ -84,8 +84,8 @@ const ExamSecurityLayout = () => {
 
           {/* Main Content */}
           <main className="flex-1 p-8 flex flex-col h-screen">
-            <header className="flex justify-between items-center  pb-2 mb-6 bg-white z-10  p-4">
-              <h1 className="text-2xl font-semibold text-gray-800">Exam Dashboard</h1>
+            <header className="flex justify-between items-center  pb-2 mb-6 bg-transparent z-10  p-4">
+              <h1 className="text-2xl font-semibold text-gray-800">Examination Controller</h1>
               <Button variant="outline" onClick={() => navigate(-1)} className="px-4 py-2">
                 ⬅ Back
               </Button>

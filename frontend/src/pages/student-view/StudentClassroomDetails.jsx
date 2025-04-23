@@ -125,9 +125,9 @@ const StudentClassroomDetails = () => {
   };
 
   return (
-    <div className="px-6 bg-white h-[95%] space-y-6 overflow-auto">
+    <div className="p-1 bg-white h-[95%] space-y-6 overflow-auto flex flex-col items-center">
       {/* Navigation Tabs - Responsive */}
-      <div className="flex w-full h-10 justify-around items-center  md:h-12">
+      <div className="flex w-full h-10 justify-around items-center  md:h-7 md:w-3/5">
         {["materials", "assignments", "members"].map((tab) => (
           <div
             key={tab}
@@ -144,7 +144,7 @@ const StudentClassroomDetails = () => {
       </div>
 
       {/* Content Section */}
-      <div className="p-4 sm:p-2 m-2 sm:m-4 flex flex-col bg-white overflow-scroll">
+      <div className="p-4 sm:p-2 m-2 sm:m-4 flex flex-col bg-white overflow-scroll  md:w-2/3">
         {/* Materials Section */}
         {view === "materials" &&
           (loading ? (
@@ -157,7 +157,7 @@ const StudentClassroomDetails = () => {
             </p>
           ) : (
             <div className="flex flex-1 w-full  flex-wrap justify-center gap-3 mb-4">
-              <div className="grid gap-4 grid-cols-1 w-full lg:w-3/5">
+              <div className="grid gap-4 grid-cols-1 w-full ">
                 {materials.map((material) => (
                   <Card
                     key={material._id}
@@ -249,7 +249,7 @@ const StudentClassroomDetails = () => {
             </p>
           ) : (
             <div className="flex flex-1 w-full  flex-wrap justify-center gap-3 mb-4">
-              <div className="grid gap-4 grid-cols-1 w-full lg:w-3/5">
+              <div className="grid gap-4 grid-cols-1 w-full ">
                 {assignments.map((assignment) => (
                   <Card
                     key={assignment._id}
@@ -350,20 +350,24 @@ const StudentClassroomDetails = () => {
           ) : members.length === 0 ? (
             <p className="text-gray-500 text-center">No members.</p>
           ) : (
-            <div className="flex gap-2 flex flex-wrap w-full">
+            <div className="flex gap-4 flex-1 flex-col w-full items-center">
               {members.map((member) => (
-                <Card key={member._id} className="shadow-md border rounded-lg w-full lg:w-1/5">
+                <Card key={member._id} className=" border-b-2 w-full lg:w-3/5">
                   <CardContent className="flex flex-row items-center gap-2 p-4">
                     <img
                       src={member.photoURL || "/default-avatar.png"}
                       alt="User Avatar"
                       className="w-12 h-12 rounded-full object-cover"
                       referrerPolicy="no-referer"
-                    />
+                    /> <div className="flex w-full justify-between">
                     <p className="text-lg text-gray-500">
                       {member.fullName || "Unknown"}
                       
                     </p>
+                    {member.role == "teacher"? <p className="text-sm text-gray-500">
+                      Teacher
+                      
+                    </p>: ""}</div>
                   </CardContent>
                 </Card>
               ))}

@@ -23,6 +23,7 @@ export const useAuthStore = create((set) => ({
   isCheckingAuth: false,
   idToken:null,
   role:null,
+  examUserId:null,
   set: (data) => set({ ...data }),
   // Regular signup with email and password
   signup: async (data) => {
@@ -129,8 +130,8 @@ export const useAuthStore = create((set) => ({
       toast.success("Login successful with Google");
       
       return true;
-    } catch(error) {
-      toast.error("Google Login failed:User not signed up",error);
+    } catch(error){
+      toast.error("Google Login failed:User not signed up",error.response.data.message);
       return false;
     } finally {
       set({ isLogginIn: false });

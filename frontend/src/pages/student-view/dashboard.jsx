@@ -69,6 +69,15 @@ const StudentDashboard = () => {
                 <span>Join</span>
               </Link>
             </li>
+            <li>
+              <Link
+                to="student-assessment"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#7618a9] transition"
+              >
+                <Stamp size={24} />
+                <span>Assessment</span>
+              </Link>
+            </li>
             
           </ul>
         </nav>
@@ -139,26 +148,18 @@ const StudentDashboard = () => {
                     {/* Divider */}
                     <li className="border-t border-gray-200"></li>
 
-                    {/* Manage Profile Option */}
-                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      <Link
-                        to="/manage-profile"
-                        className="flex items-center space-x-2"
-                      >
-                        <User size={16} />
-                        <span className="text-sm">Manage Profile</span>
-                      </Link>
-                    </li>
+                  
+                    
 
                     {/* Logout Option */}
-                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    <li className="px-4 py-6 hover:bg-gray-100 cursor-pointer">
                       <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-2 w-full"
+                        className="flex items-center justify-center space-x-2 w-full"
                       >
                         <LogOut size={16} />
                         <span className="text-sm">
-                          Logout from All Sessions
+                          Logout
                         </span>
                       </button>
                     </li>

@@ -9,6 +9,7 @@ import {
   LucideTrash2,
   Mail,
   MoreVertical,
+  Plus,
   PlusCircle,
   Share2,
   Users,
@@ -126,7 +127,7 @@ const TeacherClassroomDetails = () => {
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState(null);
   const [createDialogType, setCreateDialogType] = useState(null);
-  const [view, setView] = useState('materials');
+  const [view, setView] = useState("materials");
   const navigate = useNavigate();
   const [createAssignment, setCreateAssignment] = useState({
     title: "",
@@ -139,13 +140,24 @@ const TeacherClassroomDetails = () => {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
   const [newSubject, setNewSubject] = useState("");
-  const { idToken,authUser } = useAuthStore();
+  const { idToken, authUser } = useAuthStore();
   /*   const handleCreateOption = (type) => {
     setCreateDialogType(type);
   }; */
 
   const closeCreateDialog = () => {
     setCreateDialogType(null);
+    setCreateAssignment({
+      title: "",
+      description: "",
+      dueDate: "",
+      acceptResponses: false,
+      classroomId: "",
+    });
+    setSelectedSubject("");
+    setTitle("");
+    setDescription("");
+    setFiles(null);
   };
   const fetchClassroomDetails = async () => {
     try {
@@ -255,14 +267,16 @@ const TeacherClassroomDetails = () => {
       fetchClassroomDetails();
     } catch (error) {
       console.error("Error adding teacher:");
-      toast.error(error.message);
+      toast.error(error.response.data.message);
     }
   };
 
   const handleRemoveMember = async (memberId) => {
     try {
-      if(memberId==authUser._id){
-        return toast.error("You cannot remove yourself. Because you are the creator");
+      if (memberId == authUser._id) {
+        return toast.error(
+          "You cannot remove yourself. Because you are the creator"
+        );
       }
       const response = await axiosInstance.delete(`/c/${id}/remove-member`, {
         data: { memberId }, // Correct way to pass body in DELETE request
@@ -364,6 +378,7 @@ const TeacherClassroomDetails = () => {
         setDescription("");
         setFiles([]);
         fetchClassroomDetails();
+        closeCreateDialog();
       }
     } catch (error) {
       console.error(
@@ -436,7 +451,6 @@ const TeacherClassroomDetails = () => {
         );
 
         // Update Zustand store to persist changes globally
-        
       }
     } catch (error) {
       console.error("Error deleting assignment:", error);
@@ -477,13 +491,49 @@ const TeacherClassroomDetails = () => {
       );
     }
   };
+  const isFormValid =
+    createAssignment.title?.length >= 3 &&
+    createAssignment.dueDate &&
+    new Date(createAssignment.dueDate) >= new Date();
 
+  const isMaterialFormValid =
+    title.trim().length >= 3 &&
+    description.trim().length >= 10 &&
+    (selectedSubject ||
+      (showNewSubjectInput && newSubject.trim().length >= 3)) &&
+    files?.length > 0;
+
+  const handleDownload = async (fileUrl, filename) => {
+    try {
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error("Failed to download file");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
+    }
+  };
   return (
-    <div className="p-1 bg-white h-[95%] space-y-6 overflow-auto">
+    <div className="p-1 bg-white h-[95%] space-y-5 overflow-auto flex flex-col items-center ">
       <div className="flex gap-4">
         {createDialogType === "Assignment" && (
           <Sheet open={true} onOpenChange={closeCreateDialog}>
             <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+              {!isFormValid && createAssignment.title?.length > 0 ? (
+                <p className="text-red-500">Fill all required fields</p>
+              ) : (
+                ""
+              )}
+
               <SheetHeader>
                 <SheetTitle>Create New Assignment</SheetTitle>
                 <SheetDescription>
@@ -532,6 +582,11 @@ const TeacherClassroomDetails = () => {
                     }))
                   }
                 />
+                {new Date(createAssignment.dueDate) <= new Date() ? (
+                  <p className="text-red-500">Date must be today or future</p>
+                ) : (
+                  ""
+                )}
 
                 {/* File Upload */}
                 <div className="border p-2 rounded">
@@ -551,7 +606,9 @@ const TeacherClassroomDetails = () => {
                 </div>
 
                 {/* Accept Responses Checkbox */}
-                <label htmlFor="" className="m-2">Accept responses</label>
+                <label htmlFor="" className="m-2">
+                  Accept responses
+                </label>
                 <Checkbox
                   checked={createAssignment.acceptResponses}
                   onCheckedChange={(checked) =>
@@ -569,6 +626,7 @@ const TeacherClassroomDetails = () => {
                 <SheetClose asChild>
                   <button
                     type="button"
+                    disabled={!isFormValid}
                     className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                     onClick={handleAddAssignment}
                   >
@@ -592,6 +650,13 @@ const TeacherClassroomDetails = () => {
 
               <div className="p-4">
                 <div className="mb-4">
+                  {title.length > 0 && title.length <= 3 ? (
+                    <p className="text-red-400">
+                      Title must be greater than 3 characters
+                    </p>
+                  ) : (
+                    ""
+                  )}
                   <label className="block text-sm font-medium text-gray-700">
                     Title
                   </label>
@@ -605,6 +670,14 @@ const TeacherClassroomDetails = () => {
                 </div>
 
                 <div className="mb-4">
+                  {description.length > 0 && description.length <= 10 ? (
+                    <p className="text-red-400">
+                      Description must be greater than 10 characters
+                    </p>
+                  ) : (
+                    ""
+                  )}
+
                   <label className="block text-sm font-medium text-gray-700">
                     Description
                   </label>
@@ -682,7 +755,12 @@ const TeacherClassroomDetails = () => {
                 <button
                   type="button"
                   onClick={handleUploadMaterial}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                  disabled={!isMaterialFormValid}
+                  className={`px-4 py-2  text-white ${
+                    !isMaterialFormValid
+                      ? " bg-gray-200"
+                      : " bg-green-500 hover:bg-green-600"
+                  }`}
                 >
                   Upload
                 </button>
@@ -691,7 +769,7 @@ const TeacherClassroomDetails = () => {
           </Sheet>
         )}
       </div>
-      <div className="flex w-full h-10 justify-around items-center  md:h-12">
+      <div className="flex w-full h-10 justify-around items-center  md:h-7 md:w-3/5">
         {["materials", "assignments", "members"].map((tab) => (
           <div
             key={tab}
@@ -707,7 +785,7 @@ const TeacherClassroomDetails = () => {
         ))}
       </div>
 
-      <div className="p-4 sm:p-2 m-2 sm:m-4 flex flex-col bg-white overflow-scroll">
+      <div className="p-4 sm:p-2 m-2 sm:m-4 flex flex-col bg-white overflow-scroll md:w-2/3">
         {view === "materials" &&
           (loading ? (
             <div className="flex items-center justify-center h-screen">
@@ -716,30 +794,30 @@ const TeacherClassroomDetails = () => {
           ) : materials.length === 0 ? (
             <div className="flex flex-1 w-full flex-col gap-3">
               <div className="flex justify-end">
-                <button
-                  className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                <div
+                  className="px-6 py-4 font-extrabold  bg-[#aa3fecaa] right-2  text-white rounded-3xl hover:bg-[#8c41be] flex items-center shadow-xl space-x-2"
                   onClick={() => {
                     setCreateDialogType("material");
                   }}
                 >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Create</span>
-                </button>
+                  <Plus className="w-6 h-6" />
+                  <span>Create </span>
+                </div>
               </div>
               <p className="text-gray-500">No Materials uploaded yet.</p>
             </div>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
-              <div className=" sm:flex justify-end ">
-                <button
-                  className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+              <div className="flex justify-end ">
+                <div
+                  className="px-6 py-4 font-extrabold  bg-[#aa3fecaa] right-2  text-white rounded-3xl hover:bg-[#8c41be] flex items-center shadow-xl space-x-2"
                   onClick={() => {
                     setCreateDialogType("material");
                   }}
                 >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Create New</span>
-                </button>
+                  <Plus className="w-6 h-6" />
+                  <span>Create </span>
+                </div>
               </div>
               <div className="grid gap-4 grid-cols-1 w-full">
                 {materials.map((material) => (
@@ -798,7 +876,14 @@ const TeacherClassroomDetails = () => {
                               >
                                 {getFileIcon(fileExtension)}
                                 <span className="flex-1 truncate text-gray-700 text-sm sm:text-base">
-                                  {filename}
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {" "}
+                                    {filename}
+                                  </a>
                                 </span>
 
                                 <div className="flex gap-2">
@@ -865,39 +950,40 @@ const TeacherClassroomDetails = () => {
           ) : localAssignments.length === 0 ? (
             <div className="flex flex-1 w-full flex-col gap-3">
               <div className="flex justify-end">
-                <button
-                  className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                <div
+                  className="px-6 py-4 font-extrabold  bg-[#aa3fecaa] right-2  text-white rounded-3xl hover:bg-[#8c41be] flex items-center shadow-xl space-x-2"
                   onClick={() => {
                     setCreateDialogType("Assignment");
                   }}
                 >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Create</span>
-                </button>
+                  <Plus className="w-6 h-6" />
+                  <span>Create </span>
+                </div>
               </div>
               <p className="text-gray-500">No assignments uploaded yet.</p>
             </div>
           ) : (
             <div className="flex flex-1 w-full flex-col gap-3">
               <div className="flex justify-end">
-                <button
-                  className="px-4 py-2 bg-blue-500 right-2  text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                <div
+                  className="px-6 py-4 font-extrabold  bg-[#aa3fecaa] right-2  text-white rounded-3xl hover:bg-[#8c41be] flex items-center shadow-xl space-x-2"
                   onClick={() => {
                     setCreateDialogType("Assignment");
                   }}
                 >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Create</span>
-                </button>
+                  <Plus className="w-6 h-6" />
+                  <span>Create </span>
+                </div>
               </div>
               <div className="grid gap-4 grid-cols-1 w-full">
                 {localAssignments.map((assignment) => (
                   <Card
                     key={assignment._id}
                     className="shadow-md border rounded-lg cursor-pointer hover:shadow-lg transition p-4 w-full"
-                    onClick={() =>
-                      navigate(`/teacher/dashboard/a/${assignment._id}`)
-                    }
+                    onClick={() => {
+                      if (assignment.createdBy?.fullName == authUser.fullName)
+                        navigate(`/teacher/dashboard/a/${assignment._id}`);
+                    }}
                   >
                     <CardHeader className="flex flex-row gap-3 justify-between  items-center">
                       <CardTitle>{assignment.title}</CardTitle>
@@ -956,8 +1042,6 @@ const TeacherClassroomDetails = () => {
                                       <Eye />
                                     </Button>
                                   )}
-
-                                  
                                 </div>
                               );
                             })}
@@ -1013,7 +1097,7 @@ const TeacherClassroomDetails = () => {
                         {classroom.joinCode}
                       </span>
                       <button
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-gray-200 flex items-center gap-2"
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-gray-700 flex items-center gap-2"
                         onClick={() =>
                           navigator.clipboard.writeText(classroom.joinCode)
                         }
@@ -1113,20 +1197,23 @@ const TeacherClassroomDetails = () => {
                   key={member._id}
                   className=" border-none flex justify-between items-center p-4"
                 >
-                  <div className="flex items-center gap-3">
-                    {member.photoURL ? (
-                      <img
-                        src={member.photoURL}
-                        alt="User Avatar"
-                        className="w-12 h-12 rounded-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-white rounded-full"></div>
-                    )}
-                    <p className="text-lg text-gray-500">
-                      {member.fullName || "Unknown"}
-                    </p>
+                  <div className="flex flex-row items-center gap-3">
+                    <img
+                      src={member.photoURL}
+                      alt="User Avatar"
+                      className="w-12 h-12 rounded-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="flex flex-1 justify-between gap-6">
+                      <p className="text-lg text-gray-500">
+                        {member.fullName || "Unknown"}
+                      </p>
+                      {member.role == "teacher" ? (
+                        <p className="text-sm text-gray-500">Teacher</p>
+                      ) : (
+                        ""
+                      )}
+                    </div>
                   </div>
 
                   {/* Three-dot Dropdown Menu */}

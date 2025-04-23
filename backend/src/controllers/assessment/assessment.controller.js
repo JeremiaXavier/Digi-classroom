@@ -47,6 +47,22 @@ export const getAssessments = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const changePin = async (req, res) => {
+  try {
+    const { newPin } = req.body;
+    const userId = req.user._id; // ✅ Fix: get from authenticated user
+
+    if (!newPin || newPin.length !== 6) {
+      return res.status(400).json({ message: "PIN must be 6 digits." });
+    }
+
+    await User.findByIdAndUpdate(userId, { otp: newPin });
+    res.status(200).json({ message: "PIN updated successfully." });
+  } catch (error) {
+    console.error(error); // Good for debugging
+    res.status(500).json({ message: "Error updating PIN.", error });
+  }
+};
 
 export const getStudentAssessments = async (req, res) => {
   try {
@@ -324,9 +340,7 @@ export const saveStudentAnswer = async (req, res) => {
         answerRecord.answers[existingAnswerIndex] = {
           questionId,
           isMultiple,
-          answerId: isMultiple
-            ?  [...new Set(answerId)] 
-            : answerId,
+          answerId: isMultiple ? [...new Set(answerId)] : answerId,
           paragraphAnswer: "", // Ensure no paragraphAnswer for MCQs
         };
       } else if (type === "paragraph") {
@@ -402,7 +416,7 @@ export const getStudentAnswersReview = async (req, res) => {
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
-
+    console.log(submission);
     const allAnswers = submission.testId.questions.map((question) => {
       // Find the user's answer for this question
       const userAnswer = submission.answers.find(
@@ -410,15 +424,19 @@ export const getStudentAnswersReview = async (req, res) => {
       );
 
       // Extract the user-selected choices' text by matching answerId with choices
-      const selectedChoiceTexts = userAnswer
-        ? question.choices
-            .filter((choice) =>
-              userAnswer.answerId.some(
-                (selectedId) => selectedId.toString() === choice._id.toString()
+      const selectedChoiceTexts =
+        userAnswer && Array.isArray(question.choices)
+          ? question.choices
+              .filter(
+                (choice) =>
+                  Array.isArray(userAnswer.answerId) &&
+                  userAnswer.answerId.some(
+                    (selectedId) =>
+                      selectedId.toString() === choice._id.toString()
+                  )
               )
-            )
-            .map((choice) => choice.text)
-        : [];
+              .map((choice) => choice.text)
+          : [];
 
       return {
         questionId: question._id,
@@ -434,7 +452,7 @@ export const getStudentAnswersReview = async (req, res) => {
     res.json({ answers: allAnswers });
   } catch (error) {
     console.error("Error fetching answers:", error);
-    res.status(500).json({ message: "Error fetching answers" });
+    res.status(500).json({ message: "Error fetching answers", error });
   }
 };
 
@@ -675,7 +693,7 @@ export const getStudentScoreboard = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
- const SUSPENSION_THRESHOLD =3;
+const SUSPENSION_THRESHOLD = 3;
 export const setMalpracticeLog = async (req, res) => {
   try {
     const { userId, testId, violationType, details = "" } = req.body;
@@ -708,7 +726,9 @@ export const setMalpracticeLog = async (req, res) => {
       .status(201)
       .json({ message: "Malpractice recorded successfully", isSuspended });
   } catch (error) {
-    res.status(500).json({ error: "Failed to log malpractice",error:error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to log malpractice", error: error.message });
   }
 };
 
@@ -744,21 +764,24 @@ export const malpracticeAction = async (req, res) => {
       { $set: { actionTaken: "Answer Reset" } }
     );
 
-    return res.status(200).json({ message: "User suspended, answers reset, and malpractice logs updated" });
+    return res
+      .status(200)
+      .json({
+        message: "User suspended, answers reset, and malpractice logs updated",
+      });
   } catch (error) {
     console.error("Error handling malpractice:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-
 export const studentExitExam = async (req, res) => {
   try {
-    const { timeleft,testId } = req.body;
+    const { timeleft, testId } = req.body;
 
     // Log the malpractice event (exiting before the exam ended)
     const malpracticeEntry = new MalpracticeLog({
-      userId: req.user._id, 
+      userId: req.user._id,
       testId: testId, // The ID of the test being taken
       violationType: "Exit before exam time ended", // Descriptive violation type
       timestamp: new Date(),
@@ -771,10 +794,17 @@ export const studentExitExam = async (req, res) => {
     await malpracticeEntry.save();
 
     // Respond with success message
-    return res.status(200).json({ success: true, message: "Malpractice logged successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Malpractice logged successfully" });
   } catch (error) {
     console.error("Error logging malpractice:", error);
-    return res.status(500).json({ success: false, message: "An error occurred while logging malpractice" });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "An error occurred while logging malpractice",
+      });
   }
 };
 
@@ -795,14 +825,18 @@ export const getMalpracticeLogsForAssessment = async (req, res) => {
       .sort({ timestamp: -1 }); // Sort by timestamp to get most recent logs first
 
     if (!malpracticeLogs.length) {
-      return res.status(404).json({ message: "No malpractice logs found for this assessment" });
+      return res
+        .status(404)
+        .json({ message: "No malpractice logs found for this assessment" });
     }
 
     // Respond with the logs and associated user details
     return res.status(200).json(malpracticeLogs);
   } catch (error) {
     console.error("Error fetching malpractice logs:", error);
-    return res.status(500).json({ message: "Server error while fetching malpractice logs" });
+    return res
+      .status(500)
+      .json({ message: "Server error while fetching malpractice logs" });
   }
 };
 
@@ -811,16 +845,16 @@ export const suspendStudent = async (req, res) => {
   try {
     // Find the malpractice log by logId
     const log = await MalpracticeLog.findById(logId);
-    
+
     if (!log) {
-      return res.status(404).json({ message: 'Malpractice log not found' });
+      return res.status(404).json({ message: "Malpractice log not found" });
     }
 
     // Find the student associated with this log (assuming userId is the student reference)
     const student = await User.findById(log.userId);
-    
+
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: "Student not found" });
     }
 
     // Update student's status to suspended (add a suspended field to your student schema if needed)
@@ -828,35 +862,36 @@ export const suspendStudent = async (req, res) => {
     await student.save();
 
     // Optionally, update the malpractice log to reflect the action taken
-    
-    log.actionTaken = 'Suspended from all examinations';
+
+    log.actionTaken = "Suspended from all examinations";
     await log.save();
 
-    return res.status(200).json({ message: 'Student suspended successfully' });
+    return res.status(200).json({ message: "Student suspended successfully" });
   } catch (error) {
-    console.error('Error suspending student:', error);
-    return res.status(500).json({ message: 'Server error',error:error.message });
+    console.error("Error suspending student:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
 // Assuming you're using something like MongoDB with Mongoose
-
 
 export const removeSuspension = async (req, res) => {
   const { logId } = req.params; // Log ID from URL
   try {
     // Find the malpractice log by logId
     const log = await MalpracticeLog.findById(logId);
-    
+
     if (!log) {
-      return res.status(404).json({ message: 'Malpractice log not found' });
+      return res.status(404).json({ message: "Malpractice log not found" });
     }
 
     // Find the student associated with this log (assuming userId is the student reference)
     const student = await User.findById(log.userId);
-    
+
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: "Student not found" });
     }
 
     // Update student's suspension status to false (remove suspension)
@@ -864,14 +899,23 @@ export const removeSuspension = async (req, res) => {
     await student.save();
 
     // Optionally, update the malpractice log to reflect the action taken
- 
 
     // Remove all malpractice logs for the student
-    await MalpracticeLog.deleteMany({ userId: student._id,testId:log.testId });
+    await MalpracticeLog.deleteMany({
+      userId: student._id,
+      testId: log.testId,
+    });
 
-    return res.status(200).json({ message: 'Suspension removed and all malpractice logs cleared successfully' });
+    return res
+      .status(200)
+      .json({
+        message:
+          "Suspension removed and all malpractice logs cleared successfully",
+      });
   } catch (error) {
-    console.error('Error removing suspension and clearing logs:', error);
-    return res.status(500).json({ message: 'Server error',error:error.message });
+    console.error("Error removing suspension and clearing logs:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };

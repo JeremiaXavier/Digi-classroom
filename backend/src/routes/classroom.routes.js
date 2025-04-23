@@ -1,6 +1,6 @@
 import express from "express"
 import { protectRoute } from "../middlewares/auth.middleware.js"
-import { createClassrooms, getClassrooms, uploadMaterials, getClassroomMaterials, getClassroomMembers, StudentGetClassrooms , JoinClassroom, getSubjects, addSubject, deleteMaterials, addTeacher, deleteMember } from "../controllers/classroom/classroom.controller.js"
+import { createClassrooms, getClassrooms, uploadMaterials, getClassroomMaterials, getClassroomMembers, StudentGetClassrooms , JoinClassroom, getSubjects, addSubject, deleteMaterials, addTeacher, deleteMember, exitClassroom } from "../controllers/classroom/classroom.controller.js"
 import multer from "multer"
 import { deleteClassroom } from "../controllers/deletionControllers/deletion.controller.js"
 const classroomRouter = express.Router()
@@ -18,6 +18,7 @@ classroomRouter.post("/:classroomId/add-teacher",protectRoute,addTeacher);
 
 classroomRouter.delete("/:id/delete",protectRoute,deleteClassroom);
 classroomRouter.delete("/:classroomId/remove-member",protectRoute,deleteMember);
+classroomRouter.delete("/:classroomId/exit-classroom",protectRoute,exitClassroom);
 classroomRouter.post("/join",protectRoute,JoinClassroom);
 classroomRouter.get("/:classroomId/get-subjects",protectRoute,getSubjects);
 classroomRouter.post("/add-subjects",protectRoute,addSubject);
